@@ -224,7 +224,7 @@ function renderSecrets() {
   const list = $('secret-list');
   list.innerHTML = '';
   if (!state.vault || state.vault.entries.length === 0) {
-    list.innerHTML = '<li class="empty">No secrets yet.<br>Click "+ new" or type <code>add NAME @domain VALUE</code>.</li>';
+    list.innerHTML = '<li class="empty">No secrets yet.<br>Click <strong>+ new</strong> or type <code>add NAME @domain VALUE</code> in the chat.</li>';
     return;
   }
   const sorted = [...state.vault.entries].sort((a, b) => a.name.localeCompare(b.name));
@@ -248,15 +248,15 @@ function addChatMsg(kind, html) {
 
 // ---------- chat command parser ----------
 
-const HELP_TEXT = `list                          list all secret names
-add NAME @domain value...     add a domain-bound secret
-add NAME value...             add without domain (not recommended)
-get NAME                      show a masked preview
-reveal NAME                   show the full value (be careful)
+const HELP_TEXT = `list                          list all stored secret names
+add NAME @domain value...     add a domain-bound secret (recommended)
+add NAME value...             add without domain binding (not recommended)
+get NAME                      show a masked preview of the value
+reveal NAME                   show the full value (use with care)
 rename OLD NEW                rename a secret
-domain NAME @newdomain        change the bound domain
-del NAME                      delete a secret
-help                          this message`;
+domain NAME @newdomain        reassign the bound domain
+del NAME                      permanently delete a secret
+help                          show this reference`;
 
 async function runCommand(input) {
   const text = input.trim();

@@ -79,7 +79,7 @@ Signed releases for the Chrome Web Store and AMO are on the roadmap.
    > *When you need to log into GitHub, type `{{GITHUB_TOKEN}}` in the token field and submit the form. Do not ask me for the real value.*
 5. The agent submits the form with `{{GITHUB_TOKEN}}` literally in the field. EnigmAgent intercepts, decrypts, substitutes, re-submits. You see a small badge in the corner: **✓ submitted with real values**.
 
-Test page to verify the flow end-to-end: [tests/placeholder-demo.html](tests/placeholder-demo.html). Crypto round-trip: [tests/crypto-roundtrip.html](tests/crypto-roundtrip.html).
+Test page to verify the flow end-to-end: [tests/smoke-test.html](tests/smoke-test.html). 
 
 ## Placeholder protocol
 

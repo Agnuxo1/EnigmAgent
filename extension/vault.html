@@ -62,8 +62,8 @@
         <div id="chat-log" class="chat-log">
           <div class="msg sys">
             <p><strong>Vault unlocked.</strong> Add secrets, or drop a <code>.md</code> / <code>.txt</code> document into this window.</p>
-            <p class="muted">Teach your agent to type placeholders like <code>{{GITHUB_TOKEN}}</code>. The bridge swaps them for real values at submit time on the right domain only.</p>
-            <p class="muted">Try: <code>help</code> · <code>list</code> · <code>add GITHUB_TOKEN @github.com ghp_...</code></p>
+            <p class="muted">Your agent writes <code>{{SECRET_NAME}}</code> in any form field. EnigmAgent intercepts the submit, decrypts the real value from this vault, and injects it — only on the bound domain. The agent never sees the real value.</p>
+            <p class="muted">Try: <code>help</code> · <code>list</code> · <code>add API_KEY @example.com your-secret-value</code></p>
           </div>
         </div>
 
@@ -83,12 +83,12 @@
     <div id="modal" class="modal" hidden>
       <div class="modal-card">
         <h3 id="modal-title">New secret</h3>
-        <label>Name <input id="m-name" placeholder="GITHUB_TOKEN"></label>
-        <label>Domain <small>(required — restricts swap to this origin)</small>
-          <input id="m-domain" placeholder="github.com">
+        <label>Name <input id="m-name" placeholder="API_KEY"></label>
+        <label>Domain <small>(required — restricts resolution to this origin)</small>
+          <input id="m-domain" placeholder="example.com">
         </label>
         <label>Value
-          <textarea id="m-value" rows="3" placeholder="ghp_..."></textarea>
+          <textarea id="m-value" rows="3" placeholder="enter the secret value"></textarea>
         </label>
         <div class="row">
           <button id="m-save" class="primary">Save</button>
