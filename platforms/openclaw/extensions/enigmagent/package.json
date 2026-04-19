@@ -1,0 +1,72 @@
+{
+  "name": "@openclaw/plugin-enigmagent",
+  "version": "0.2.0",
+  "description": "EnigmAgent encrypted vault plugin for OpenClaw agents. Resolves {{PLACEHOLDER}} secret references in tool call parameters at execution time — secret values never reach the LLM.",
+  "license": "MIT",
+  "author": "agnuxo1",
+  "homepage": "https://github.com/agnuxo1/EnigmAgent",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/agnuxo1/EnigmAgent",
+    "directory": "platforms/openclaw/extensions/enigmagent"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./vault-client": {
+      "import": "./dist/vault-client.js",
+      "types": "./dist/vault-client.d.ts"
+    },
+    "./middleware": {
+      "import": "./dist/middleware.js",
+      "types": "./dist/middleware.d.ts"
+    },
+    "./tools": {
+      "import": "./dist/tools.js",
+      "types": "./dist/tools.d.ts"
+    },
+    "./cli": {
+      "import": "./dist/cli.js",
+      "types": "./dist/cli.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "openclaw.plugin.json",
+    "README.md"
+  ],
+  "scripts": {
+    "build":   "tsc --project tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "clean":   "rm -rf dist",
+    "prepublishOnly": "npm run build"
+  },
+  "peerDependencies": {
+    "@openclaw/plugin-sdk": ">=0.8.0"
+  },
+  "peerDependenciesMeta": {
+    "@openclaw/plugin-sdk": { "optional": true }
+  },
+  "devDependencies": {
+    "@openclaw/plugin-sdk": "latest",
+    "typescript": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "openclaw",
+    "openclaw-plugin",
+    "vault",
+    "secrets",
+    "ai-agents",
+    "mcp",
+    "argon2",
+    "aes-gcm"
+  ]
+}

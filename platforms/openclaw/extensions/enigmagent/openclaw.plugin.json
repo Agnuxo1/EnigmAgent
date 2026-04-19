@@ -1,0 +1,66 @@
+{
+  "$schema": "https://openclaw.dev/schemas/plugin/v1.json",
+  "name": "enigmagent",
+  "version": "0.2.0",
+  "displayName": "EnigmAgent Vault",
+  "description": "Encrypted local vault for AI agents. Resolves {{PLACEHOLDER}} secret references in tool call parameters at execution time — secret values never reach the LLM.",
+  "author": "agnuxo1",
+  "homepage": "https://github.com/agnuxo1/EnigmAgent",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+
+  "capabilities": {
+    "middleware": true,
+    "tools": [
+      "enigmagent_vault_status",
+      "enigmagent_vault_list"
+    ],
+    "cliCommands": [
+      "enigmagent:status",
+      "enigmagent:list",
+      "enigmagent:start"
+    ]
+  },
+
+  "configuration": {
+    "type": "object",
+    "properties": {
+      "host": {
+        "type": "string",
+        "default": "127.0.0.1",
+        "description": "EnigmAgent REST API host. Never change to 0.0.0.0 — the vault must not be exposed to the network."
+      },
+      "port": {
+        "type": "integer",
+        "default": 3737,
+        "description": "EnigmAgent REST API port."
+      },
+      "strictMode": {
+        "type": "boolean",
+        "default": false,
+        "description": "If true, any unresolvable {{PLACEHOLDER}} blocks the tool call with an error. Recommended for production."
+      },
+      "timeoutMs": {
+        "type": "integer",
+        "default": 5000,
+        "description": "Request timeout in milliseconds when contacting the vault server."
+      }
+    }
+  },
+
+  "requires": {
+    "openclaw": ">=0.8.0",
+    "node": ">=18.0.0"
+  },
+
+  "externalProcess": {
+    "description": "The EnigmAgent vault server must be started separately before using this plugin.",
+    "startCommand": "enigmagent-mcp --mode rest --port 3737 --vault ~/.enigmagent/vault.json",
+    "healthCheck": {
+      "url": "http://127.0.0.1:3737/status",
+      "expectedKey": "unlocked",
+      "expectedValue": true
+    }
+  }
+}
