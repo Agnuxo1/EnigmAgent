@@ -1,0 +1,19 @@
+{
+  "name": "enigmagent-build",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Reproducible build + test harness for the EnigmAgent extension. See ../README.md for the project overview.",
+  "type": "module",
+  "scripts": {
+    "build:argon2": "esbuild argon2-entry.js --bundle --minify --format=iife --target=es2020 --outfile=../extension/lib/argon2id.js",
+    "build:icons": "python make-icons.py",
+    "build": "npm run build:argon2 && npm run build:icons",
+    "test": "node run-tests.mjs"
+  },
+  "author": "Francisco Angulo de Lafuente <agnuxo1@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "@noble/hashes": "1.4.0",
+    "esbuild": "^0.28.0"
+  }
+}

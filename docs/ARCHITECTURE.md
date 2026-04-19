@@ -1,60 +1,106 @@
 # Architecture
 
-## Three components, one principle
+## One extension, three components
 
-**Principle**: the LLM must operate on *references*, not on *values*. The value lives on disk, encrypted, and is only materialized in the exact DOM input that will submit it — after the agent has finished its turn.
+EnigmAgent ships as a single Manifest V3 WebExtension. Everything — vault UI, crypto, form interception, messaging — lives under the same `chrome-extension://<id>` origin. There is no `file://` HTML to open, no native host to install, no external dependency loaded at runtime.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
-│                              USER'S MACHINE                               │
+│                              USER'S BROWSER                               │
 │                                                                           │
 │  ┌────────────────────┐        ┌──────────────────┐                       │
-│  │   LLM / Agent      │        │   Browser Bridge │                       │
-│  │   (any provider)   │        │   (WebExtension) │                       │
+│  │   LLM / Agent      │        │  Background SW   │                       │
+│  │   (any provider)   │        │  (background.js) │                       │
 │  │                    │        │                  │                       │
-│  │   Sees only:       │        │  content script  │                       │
-│  │   {{GITHUB_TOKEN}} │        │  + background    │                       │
-│  └─────────┬──────────┘        └────────┬─────────┘                       │
-│            │                            │                                 │
-│            │ types placeholder          │ intercepts submit,              │
-│            │ into form field            │ requests decrypted              │
-│            ▼                            │ value from vault tab            │
-│     ┌─────────────┐                     │                                 │
-│     │   Website   │◀────────────────────┘                                 │
-│     │  (github…)  │   substituted value arrives just-in-time              │
-│     └─────────────┘                                                       │
+│  │   Sees only:       │        │  routes, 7 s TO  │                       │
+│  │   {{GITHUB_TOKEN}} │        └────────┬─────────┘                       │
+│  └─────────┬──────────┘                 │                                 │
+│            │ types placeholder          │ chrome.tabs.sendMessage         │
+│            │ into the form              │                                 │
+│            ▼                            ▼                                 │
+│      ┌──────────────┐            ┌──────────────┐                         │
+│      │ content.js   │            │   vault.js   │                         │
+│      │ (every page) │◀──────────▶│  (unlocked   │                         │
+│      └──────┬───────┘   resolve  │   vault tab) │                         │
+│             │                    └──────┬───────┘                         │
+│             │ setInputValue              │                                │
+│             ▼                            │                                │
+│        ┌─────────────┐                   │                                │
+│        │   Website   │                   │ chrome.storage.local          │
+│        │  (github…)  │                   ▼                                │
+│        └─────────────┘            Encrypted vault JSON                    │
 │                                                                           │
-│            ▲                                                              │
-│            │ message via window.postMessage /                             │
-│            │ chrome.runtime + sessionStorage key                          │
-│            │                                                              │
-│  ┌─────────┴──────────┐                                                   │
-│  │   Vault App        │                                                   │
-│  │   (local .html)    │   AES-256-GCM blobs on disk                       │
-│  │                    │ ◀──── encrypted-vault.json (next to index.html)   │
-│  │   Web Crypto API   │                                                   │
-│  │   Argon2id (WASM)  │                                                   │
-│  └────────────────────┘                                                   │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
+
+### `content.js`
+
+Injected on every page (except `file://`). Listens for the `submit` event in capture phase. When any `<input>` / `<textarea>` inside the submitting form contains a `{{PLACEHOLDER}}`:
+
+1. `preventDefault()` + `stopImmediatePropagation()` on the submit.
+2. For each hit, `chrome.runtime.sendMessage({ type: 'resolve-placeholder', placeholder, origin: location.origin })`.
+3. The returned value is written using the native `value` setter so React's synthetic-event tracker registers the change.
+4. The form's `dataset.enigmaDone = '1'` flag is set and `form.requestSubmit()` is called — the submit handler on the second pass sees the flag and lets the event propagate normally.
+
+The real value exists in one JS variable for ~1 event-loop tick. Never copied to the clipboard, never logged, never sent to any other tab or script.
+
+### `background.js`
+
+Stateless service worker. Keeps `vaultTabId` in `chrome.storage.session` (cleared when the browser restarts). Exposes four message types:
+
+- `resolve-placeholder` → routes to the vault tab with a 7-second timeout.
+- `status` → returns whether the vault tab is open.
+- `open-vault` → open or focus the vault tab.
+- `vault-unlocked` / `vault-locked` → self-announcement from `vault.js`.
+
+If the cached `vaultTabId` is stale (user closed that tab), the worker scans `chrome.tabs.query({ url: vault-url })` before giving up.
+
+### `vault.js` (vault.html)
+
+The entire vault UI: unlock screen, chat-style command input, secret list, modal for add/edit, document uploader.
+
+On `bridge-resolve` messages:
+
+1. Reject if the vault is locked.
+2. Reject if the placeholder is unknown.
+3. Reject if the secret has no bound domain **or** the request origin does not match.
+4. Otherwise, decrypt and return the plaintext through `sendResponse`.
+
+No plaintext is ever persisted. The `CryptoKey` is imported with `extractable = false`.
 
 ## Crypto
 
 ### Key derivation
-```
-password + username + salt  ──Argon2id──▶  master_key (32 bytes)
-                            (m=64 MiB, t=3, p=1)
-```
-The username is mixed into the salt so that two users on the same machine with the same password still get different keys.
 
-### Vault format
-Each vault is a single JSON file:
+```
+           salt (16 B random)                 context = "enigma/v1|" + username
+                  │                                          │
+                  └──────────────── concat ──────────────────┘
+                                     │
+                                     ▼
+password (UTF-8) ──── Argon2id ──── raw key (32 B)
+              (m = 65536 KiB, t = 3, p = 1)
+                                     │
+                                     ▼
+                             AES-GCM CryptoKey (non-extractable)
+```
+
+Memory cost: 64 MiB. Time cost: 3 passes. On a modern laptop this takes ~800 ms — deliberately. That's what makes a stolen vault file expensive to brute-force.
+
+The username is mixed into the KDF context so that two users on the same machine with the same password still derive different keys.
+
+### Vault file format
+
 ```json
 {
   "version": 1,
   "kdf": "argon2id",
-  "kdf_params": { "m": 65536, "t": 3, "p": 1 },
+  "kdf_params": { "t": 3, "m": 65536, "p": 1, "dkLen": 32 },
   "salt": "<base64 16 bytes>",
+  "check": {
+    "nonce": "<base64 12 bytes>",
+    "ciphertext": "<base64 AES-256-GCM of 'enigmagent-check|username'>"
+  },
   "entries": [
     {
       "id": "uuid",
@@ -67,53 +113,34 @@ Each vault is a single JSON file:
   ]
 }
 ```
-Each entry has its own nonce. The master key is never written to disk.
 
-### Why AES-256-GCM + Argon2id, not "Bitcoin encryption"?
+Each entry has an independent nonce. The `check` entry lets us validate a password on unlock without having to decrypt a real secret (the vault might be empty).
 
-Bitcoin uses **secp256k1 ECDSA/Schnorr signatures** — those sign, they don't encrypt. There is an ECIES construction built on secp256k1 that *does* encrypt, but for a single-user local vault it adds complexity without a security benefit over authenticated symmetric encryption. AES-256-GCM is:
-- Hardware-accelerated on every modern CPU (AES-NI).
-- Available natively in the browser via `crypto.subtle.encrypt`.
-- AEAD — detects tampering.
-- The de-facto standard for at-rest encryption (1Password, Bitwarden, age, NaCl…).
+## Placeholder grammar
 
-## The placeholder protocol
+```
+placeholder  := "{{" name "}}"
+name         := [A-Z0-9_:\-.@]+         (case-insensitive)
+```
 
-Placeholders are plain text tokens the LLM is trained (via system prompt) to emit:
-
-| Syntax | Meaning |
-|---|---|
-| `{{GITHUB_TOKEN}}` | Fetch secret named `GITHUB_TOKEN` |
-| `{{LOGIN:github.com}}` | Fetch user+pass pair bound to `github.com`, dispatched to the two nearest input fields |
-| `{{DOC:contract.md}}` | Paste the decrypted document contents |
-| `{{DOC:contract.md#summary}}` | Paste a pre-computed summary (the LLM may see this one — the user authored it) |
-| `{{NIE}}`, `{{IBAN}}`, `{{BIRTH_DATE}}` | Personal-data placeholders, typically used in form filling |
-
-### Submit-time swap
-
-1. Agent types `{{GITHUB_TOKEN}}` into `<input name="token">`.
-2. User (or agent) clicks Submit.
-3. Content script intercepts `submit` (and `keydown Enter`, `click` on `type=submit`).
-4. Content script scans all form fields for the `{{…}}` pattern.
-5. For each hit: post a message to the background script → to the vault tab → returns plaintext.
-6. Content script replaces the field value and then programmatically re-submits.
-7. The plaintext lives in JS memory for a single event loop tick.
-
-### Domain binding
-
-A secret marked `domain: "github.com"` will refuse to swap if the form's origin is not `github.com` or a subdomain. This prevents a malicious page from asking the agent to paste a GitHub token into a phishing form.
+Examples: `{{GITHUB_TOKEN}}`, `{{LOGIN:github.com}}`, `{{DOC:contract.md}}`, `{{NIF}}`, `{{Token.Main}}`, `{{my-secret-42}}`.
 
 ## What lives where
 
-| Artifact | Location | Encrypted? | Who touches it |
+| Artifact | Location | Encrypted? | Accessible to |
 |---|---|---|---|
-| `vault.json` | next to the vault-app, on disk | yes (AES-256-GCM) | vault-app only |
-| Master key | vault-app RAM | n/a (never written) | vault-app only |
-| Plaintext secret | DOM input value, for ~1 tick | no | content script, then the website |
-| Placeholder token | LLM context, chat logs | no (but has no secret value) | agent, chat provider |
+| Vault JSON | `chrome.storage.local["vault"]` | yes (AES-256-GCM) | extension only |
+| Master key | CryptoKey in vault-tab RAM | n/a (non-extractable) | vault.js only |
+| Plaintext secret | DOM `<input>.value`, ~1 event-loop tick | no | content.js, then website |
+| Placeholder token | LLM context, page DOM, chat logs | no (no secret value in it) | anyone reading the page |
 
-## Open questions
+## Why not `file://` + a standalone HTML?
 
-- **How does the vault tab reach the extension?** Options: (a) the extension ships a bundled vault page as part of its own UI; (b) the vault runs as a separate tab and communicates via `window.postMessage` through a small shim the extension injects. Leaning toward (a) for v1.
-- **Mobile?** `file://` workflow doesn't apply. Probably a PWA or a dedicated React Native app that talks to the browser via QR + WebRTC.
-- **Cross-device sync?** Integrate with P2PCLAW — encrypted blobs can sync without ever being readable by the sync provider.
+The earlier design had a separate `vault-app/index.html` and used `window.postMessage` to talk to the extension. Dropped because:
+
+- `file://` origins have inconsistent security rules across browsers.
+- `postMessage` requires the user to keep a specific tab open and in focus.
+- `chrome.storage` is not available from `file://`, forcing a fragile JSON-file workflow.
+- One origin for the whole product means one CSP, one audit surface, one code path.
+
+The extension ships everything the user needs, served from a single origin the browser treats with extension-level guarantees.

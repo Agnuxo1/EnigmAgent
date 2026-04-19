@@ -1,11 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "EnigmAgent Bridge",
+  "name": "EnigmAgent",
   "version": "0.1.0",
-  "description": "Swap {{PLACEHOLDER}} tokens in form fields for real values decrypted by a local EnigmAgent vault. The LLM never sees your secrets.",
+  "description": "Local vault that swaps {{PLACEHOLDER}} tokens in form fields for real decrypted values. Your LLM never sees your secrets.",
   "author": "Francisco Angulo de Lafuente",
   "homepage_url": "https://github.com/agnuxo1/EnigmAgent",
-  "permissions": ["storage", "scripting", "activeTab"],
+  "permissions": ["storage", "tabs"],
   "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "background.js"
@@ -13,6 +13,7 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
+      "exclude_matches": ["file:///*"],
       "js": ["content.js"],
       "run_at": "document_idle",
       "all_frames": false
@@ -34,8 +35,11 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["vault-tab.html"],
+      "resources": ["vault.html"],
       "matches": ["<all_urls>"]
     }
-  ]
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
 }

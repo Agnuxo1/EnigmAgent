@@ -1,56 +1,57 @@
 # EnigmAgent Roadmap
 
-## M0 — Concept & scaffolding (done)
-- [x] Architecture sketch
-- [x] README, LICENSE, repo layout
-- [x] Threat model draft
+## M1 — v0.1 alpha (current)
 
-## M1 — Vault MVP (in progress)
-- [ ] Single-file `vault-app/index.html` opens at `file://`
-- [ ] Argon2id key derivation (with PBKDF2 fallback) via Web Crypto + WASM
-- [ ] AES-256-GCM encrypt/decrypt of secret entries
-- [ ] Local persistence via `localStorage` (per-origin, keyed by vault ID) + exportable JSON blob
-- [ ] Chat-style UI: login → list secrets → add/edit/delete → lock
-- [ ] Upload `.md` / `.txt` documents → store encrypted
+Scope: a single WebExtension (Chrome + Firefox) that intercepts `{{PLACEHOLDER}}` in form fields and substitutes real values from a locally-encrypted vault.
 
-**Exit criteria**: user can create a vault, add a `GITHUB_TOKEN`, close the browser, reopen, unlock, retrieve.
+- [x] Manifest V3 extension, vault UI inside the extension origin (no `file://` hacks).
+- [x] Argon2id-derived key + AES-256-GCM, noble-hashes bundled (~13 KB), reproducible.
+- [x] `chrome.storage.local` persistence, `chrome.storage.session` tab-tracking.
+- [x] Submit interception with native-setter DOM write (React/Vue compatible).
+- [x] Domain binding: resolve refuses when origin doesn't match the bound domain.
+- [x] Icons, popup, export of the encrypted vault file.
+- [x] Crypto round-trip tests, placeholder demo page.
+- [ ] **End-to-end pass on real Chrome**: demo form receives the real value on submit. *(this is the gate for publishing the repo)*
 
-## M2 — Browser Bridge
-- [ ] WebExtension manifest v3 (Chrome + Firefox)
-- [ ] Content script detects `{{PLACEHOLDER}}` tokens in inputs
-- [ ] Background script runs a local message bus to talk to the vault tab
-- [ ] On form submit: swap placeholder → decrypted value → dispatch submit
-- [ ] UX: small badge in the corner shows "🔓 N secrets available"
-- [ ] Unit tests for the swap logic
+## M2 — hardening
 
-**Exit criteria**: in a real browser, an LLM agent typing `{{GITHUB_TOKEN}}` into the GitHub token field results in a successful login without the agent ever seeing the token.
+- [ ] Independent crypto review of the vault format and Argon2id parameters.
+- [ ] Reproducible build recipe baked into CI (`npm ci` → `esbuild` → compare SHA256 of `argon2id.js`).
+- [ ] CSP lockdown for `vault.html` (`script-src 'self'` only; no inline).
+- [ ] Signed releases: Chrome Web Store + Mozilla AMO + GitHub Release.
+- [ ] Automatic auto-lock after N minutes of inactivity.
+- [ ] Enforce domain binding on **create** (no unbound secrets by default).
 
-## M3 — Placeholder protocol v1
-- [ ] Spec: `{{NAMESPACE:KEY}}`, `{{DOC:name.md}}`, `{{LOGIN:domain}}` (returns user+pass pair)
-- [ ] Domain binding: a secret can be marked `github.com`-only — bridge refuses to swap on other domains
-- [ ] Audit log: every swap is recorded with timestamp, domain, placeholder, hash of value
-- [ ] Schema library in `examples/` (GitHub, Renta, Vercel, AWS…)
+## M3 — protocol v1
 
-## M4 — Agent-side skill
-- [ ] Claude Agent SDK skill that teaches the agent to *always* use placeholders
-- [ ] System prompt template
-- [ ] ChatGPT custom GPT wrapper
-- [ ] MCP server that exposes placeholder *names* (never values) to MCP-capable agents
+- [ ] `{{LOGIN:domain}}` resolves user+pass into the two nearest labeled inputs.
+- [ ] `{{DOC:name.md}}` and `{{DOC:name.md#summary}}`.
+- [ ] Personal-data namespace (`NIF`, `IBAN`, etc.) with per-placeholder description shown in the vault UI.
+- [ ] Audit log: every resolve is recorded locally with timestamp, placeholder name, origin, and a SHA-256 of the value (not the value itself).
+- [ ] Schema library (`examples/*.json`) published in a versioned form.
 
-## M5 — Documents & redaction
-- [ ] Upload a PDF / docx → extract text → store encrypted
-- [ ] `{{DOC:contract.md#summary}}` — return only a pre-computed summary to the LLM
-- [ ] Selective field redaction: e.g. give the LLM a tax form template with `{{NIE}}` slots
+## M4 — agent-side
 
-## M6 — Hardening & release
-- [ ] Independent crypto review
-- [ ] Reproducible builds for the extension
-- [ ] Signed releases (extension + vault-app zip)
-- [ ] Import/export with passphrase-wrapped key
-- [ ] Docs site
+- [ ] Claude Agent SDK skill that injects the placeholder system prompt automatically.
+- [ ] ChatGPT custom-GPT with the same guardrails.
+- [ ] MCP server that exposes placeholder **names** (never values) to MCP-aware agents so they can auto-complete placeholder tokens.
 
-## Post-1.0 ideas
-- Mobile companion (share vault via encrypted QR, decrypt on phone)
-- Team vaults with per-secret ACL (still client-side, using shared symmetric keys wrapped per-user)
-- Hardware-key unlock (WebAuthn / YubiKey) as a second factor
-- Integration with P2PCLAW for encrypted sync across devices without a central server
+## M5 — cross-device and CLI
+
+- [ ] Import/export with a passphrase-wrapped key for device transfer.
+- [ ] Native messaging host (small Python binary) that exposes the vault to CLI tools:
+      `git config credential.helper enigmagent` → resolves `{{GITHUB_TOKEN}}` when git asks for HTTPS auth.
+- [ ] Optional sync over P2PCLAW (encrypted blobs replicated between devices without a central server).
+
+## M6 — mobile companion
+
+- [ ] PWA variant for Android/iOS.
+- [ ] WebAuthn / YubiKey as a second factor for unlock.
+
+---
+
+## Not doing
+
+- Running the vault in the cloud. Ever.
+- SaaS tiers. The whole point is *no server*.
+- Acting as a general-purpose password manager. Use 1Password / Bitwarden for daily login UX; EnigmAgent is specifically the agent-in-the-loop layer.

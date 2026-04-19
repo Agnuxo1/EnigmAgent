@@ -13,6 +13,9 @@ build/
 *.crx
 web-ext-artifacts/
 
+# Local HTTP-server artefacts
+.python-http.log
+
 # Editors / OS
 .vscode/
 .idea/

@@ -7,24 +7,26 @@
     :root { color-scheme: dark; }
     body { width: 280px; margin: 0; padding: 14px;
       background: #171a21; color: #e7e9ee;
-      font: 13px/1.5 -apple-system, Segoe UI, sans-serif; }
+      font: 13px/1.5 -apple-system, "Segoe UI", sans-serif; }
     h1 { font-size: 14px; margin: 0 0 10px; display: flex; align-items: center; gap: 6px; }
     .dot { width: 8px; height: 8px; border-radius: 50%; background: #f06464; }
     .dot.ok { background: #7bd389; }
     p { margin: 0 0 10px; color: #9aa3b2; }
     button { width: 100%; padding: 8px; background: #5aa0ff; color: #0a0d12;
-      border: none; border-radius: 6px; font-weight: 600; cursor: pointer; }
+      border: none; border-radius: 6px; font-weight: 600; cursor: pointer;
+      font-family: inherit; font-size: 13px; }
     button:hover { filter: brightness(1.1); }
     .footer { margin-top: 10px; font-size: 11px; color: #6d7687; text-align: center; }
     a { color: #5aa0ff; text-decoration: none; }
+    a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
   <h1><span id="dot" class="dot"></span> EnigmAgent</h1>
-  <p id="status">Vault not open.</p>
-  <button id="open">Open vault tab</button>
+  <p id="status">Checking vault status…</p>
+  <button id="open">Open vault</button>
   <div class="footer">
-    <a href="https://github.com/agnuxo1/EnigmAgent" target="_blank">github.com/agnuxo1/EnigmAgent</a>
+    <a href="https://github.com/agnuxo1/EnigmAgent" target="_blank" rel="noopener">github.com/agnuxo1/EnigmAgent</a>
   </div>
   <script src="popup.js"></script>
 </body>

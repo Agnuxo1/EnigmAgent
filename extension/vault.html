@@ -2,8 +2,6 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'none'; img-src 'self' data:; style-src 'self' 'unsafe-inline'">
   <title>EnigmAgent Vault</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -12,17 +10,17 @@
     <div class="brand">
       <span class="logo">🔒</span>
       <span class="title">EnigmAgent</span>
-      <span class="tagline">local vault · no server · no network</span>
+      <span class="tagline">local vault · no network · no telemetry</span>
     </div>
     <div class="status" id="status">locked</div>
   </header>
 
   <main id="app">
-    <!-- Login / create view -->
     <section id="view-auth" class="view active">
       <div class="card">
         <h1>Unlock your vault</h1>
-        <p class="muted">Your vault is stored locally. Nothing is sent over the network.</p>
+        <p class="muted">Your vault lives inside this browser, encrypted with
+          AES-256-GCM and a key derived via Argon2id. Nothing is sent over the network.</p>
 
         <label>Username
           <input id="auth-user" type="text" autocomplete="username" autocapitalize="off" spellcheck="false">
@@ -37,15 +35,16 @@
         </div>
 
         <details class="import">
-          <summary>Import an existing vault file</summary>
+          <summary>Import / export a vault file</summary>
+          <p class="muted small">Import a vault exported from another device.</p>
           <input id="vault-file" type="file" accept=".json,.vault,application/json">
         </details>
 
-        <p class="err" id="auth-err" hidden></p>
+        <p id="auth-msg" hidden></p>
+        <p id="auth-progress" class="progress" hidden>Deriving key with Argon2id… this takes a second by design.</p>
       </div>
     </section>
 
-    <!-- Main vault view -->
     <section id="view-vault" class="view">
       <aside class="sidebar">
         <div class="sidebar-head">
@@ -54,7 +53,7 @@
         </div>
         <ul id="secret-list" class="secret-list"></ul>
         <div class="sidebar-foot">
-          <button id="btn-export" class="small">Export vault</button>
+          <button id="btn-export" class="small">Export</button>
           <button id="btn-lock" class="small danger">Lock</button>
         </div>
       </aside>
@@ -62,13 +61,14 @@
       <section class="chat">
         <div id="chat-log" class="chat-log">
           <div class="msg sys">
-            <p><strong>Vault unlocked.</strong> Add a secret, or drop a <code>.md</code> / <code>.txt</code> document into this window.</p>
-            <p class="muted">Teach your agent to type placeholders like <code>{{GITHUB_TOKEN}}</code>. The Browser Bridge (coming) will swap them for real values at submit time.</p>
+            <p><strong>Vault unlocked.</strong> Add secrets, or drop a <code>.md</code> / <code>.txt</code> document into this window.</p>
+            <p class="muted">Teach your agent to type placeholders like <code>{{GITHUB_TOKEN}}</code>. The bridge swaps them for real values at submit time on the right domain only.</p>
+            <p class="muted">Try: <code>help</code> · <code>list</code> · <code>add GITHUB_TOKEN @github.com ghp_...</code></p>
           </div>
         </div>
 
         <form id="chat-form" class="chat-form">
-          <textarea id="chat-input" rows="2" placeholder="Ask the vault…  (try: add GITHUB_TOKEN ghp_xxx | get GITHUB_TOKEN | list)"></textarea>
+          <textarea id="chat-input" rows="2" placeholder="type a command or ask the vault…"></textarea>
           <div class="chat-actions">
             <label class="file-btn">
               📎 Upload
@@ -80,12 +80,11 @@
       </section>
     </section>
 
-    <!-- Add/edit secret modal -->
     <div id="modal" class="modal" hidden>
       <div class="modal-card">
         <h3 id="modal-title">New secret</h3>
         <label>Name <input id="m-name" placeholder="GITHUB_TOKEN"></label>
-        <label>Domain <small>(optional — restricts swap to this origin)</small>
+        <label>Domain <small>(required — restricts swap to this origin)</small>
           <input id="m-domain" placeholder="github.com">
         </label>
         <label>Value
@@ -100,9 +99,10 @@
   </main>
 
   <footer class="footer">
-    <span>EnigmAgent v0.1-alpha · MIT · <a href="https://github.com/agnuxo1/EnigmAgent" target="_blank" rel="noopener">github</a></span>
+    <span>EnigmAgent v0.1 · MIT · <a id="repo-link" href="#" target="_blank" rel="noopener">github</a></span>
   </footer>
 
-  <script src="app.js"></script>
+  <script src="lib/argon2id.js"></script>
+  <script src="vault.js"></script>
 </body>
 </html>
