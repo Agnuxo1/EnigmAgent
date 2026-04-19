@@ -1,0 +1,20 @@
+{
+  "name": "enigmagent-tauri",
+  "version": "0.2.0",
+  "private": true,
+  "description": "EnigmAgent Tauri desktop app — native Windows/macOS/Linux (< 10 MB)",
+  "type": "module",
+  "scripts": {
+    "setup":    "node setup.js",
+    "dev":      "tauri dev",
+    "build":    "tauri build",
+    "preview":  "vite preview"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.0.0",
+    "vite":            "^5.0.0"
+  },
+  "author": "Francisco Angulo de Lafuente <agnuxo1@gmail.com>",
+  "license": "MIT"
+}

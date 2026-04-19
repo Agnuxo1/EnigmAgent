@@ -1,0 +1,23 @@
+{
+  "run": [
+    {
+      "method": "shell.run",
+      "params": {
+        "message":  "🔓 Starting EnigmAgent Vault (PWA)...",
+        "path":     "app",
+        "cmds":     ["cd platforms/pwa && npx serve . --listen 8282"],
+        "on": [
+          {
+            "event":  "/Accepting connections/",
+            "method": "local.set",
+            "params": { "url": "http://localhost:8282" }
+          }
+        ]
+      }
+    },
+    {
+      "method": "browser.open",
+      "params": { "url": "http://localhost:8282" }
+    }
+  ]
+}

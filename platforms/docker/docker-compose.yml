@@ -1,0 +1,46 @@
+version: "3.9"
+
+# EnigmAgent Docker Compose
+#
+# Usage:
+#   docker compose up -d
+#
+# Services:
+#   vault   — PWA on :8080 + optional REST API on :3737
+#
+# Vault data is stored in ./vault/ (gitignored, never lost on container restart).
+# Open http://localhost:8080 to manage secrets via the browser.
+
+services:
+  vault:
+    build:
+      context: ../..         # repo root (Dockerfile references extension/ and platforms/)
+      dockerfile: platforms/docker/Dockerfile
+    image: enigmagent:0.2.0
+    container_name: enigmagent-vault
+    restart: unless-stopped
+    ports:
+      - "8080:8080"     # PWA
+      - "3737:3737"     # REST API (only active if ENIGMAGENT_REST=true)
+    volumes:
+      - ./vault:/data   # persists vault.json across restarts
+    environment:
+      NODE_ENV: production
+      ENIGMAGENT_VAULT: /data/vault.json
+      # Uncomment to enable REST API for AI agents:
+      # ENIGMAGENT_REST: "true"
+      # ENIGMAGENT_USER: "alice"
+      # ENIGMAGENT_PASS: "strong-password"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  vault_data:

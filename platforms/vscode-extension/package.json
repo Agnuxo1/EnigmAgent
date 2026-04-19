@@ -1,0 +1,89 @@
+{
+  "name": "enigmagent-vscode",
+  "displayName": "EnigmAgent",
+  "description": "Encrypted local vault for AI agents. Manage secrets and resolve {{PLACEHOLDER}} references inside VS Code, Cursor and Windsurf.",
+  "version": "0.2.0",
+  "publisher": "agnuxo1",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Other", "AI"],
+  "icon": "media/icon-128.png",
+  "keywords": ["vault", "secrets", "ai-agents", "mcp", "cursor", "copilot"],
+  "activationEvents": ["onStartupFinished"],
+  "main": "./src/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "enigmagent.openVault",
+        "title": "EnigmAgent: Open Vault",
+        "icon": "$(lock)"
+      },
+      {
+        "command": "enigmagent.resolveSelection",
+        "title": "EnigmAgent: Resolve selected {{PLACEHOLDER}}",
+        "icon": "$(key)"
+      },
+      {
+        "command": "enigmagent.copySecret",
+        "title": "EnigmAgent: Copy secret to clipboard",
+        "icon": "$(clippy)"
+      },
+      {
+        "command": "enigmagent.lockVault",
+        "title": "EnigmAgent: Lock vault",
+        "icon": "$(lock)"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "enigmagent.resolveSelection",
+          "when": "editorHasSelection",
+          "group": "enigmagent"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "EnigmAgent",
+      "properties": {
+        "enigmagent.vaultPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the vault JSON file. Leave empty to use ~/.enigmagent/vault.json"
+        }
+      }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "enigmagent",
+          "title": "EnigmAgent",
+          "icon": "media/icon-activity.svg"
+        }
+      ]
+    },
+    "views": {
+      "enigmagent": [
+        {
+          "type": "webview",
+          "id": "enigmagentVault",
+          "name": "Vault"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "node build.js",
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "dependencies": {
+    "@noble/hashes": "1.4.0"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "^3.0.0",
+    "@types/vscode": "^1.85.0"
+  },
+  "license": "MIT",
+  "repository": { "type": "git", "url": "https://github.com/agnuxo1/EnigmAgent" }
+}

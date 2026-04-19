@@ -1,0 +1,16 @@
+{
+  "run": [
+    {
+      "method": "shell.run",
+      "params": {
+        "message": "📦 Installing EnigmAgent dependencies...",
+        "path":    "app",
+        "cmds": [
+          "cd platforms/mcp-server && npm install",
+          "cd platforms/pwa && node setup.js",
+          "echo ✅ EnigmAgent installed successfully"
+        ]
+      }
+    }
+  ]
+}

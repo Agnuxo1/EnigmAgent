@@ -1,0 +1,29 @@
+{
+  "run": [
+    {
+      "method": "input",
+      "params": {
+        "title":   "EnigmAgent MCP Server",
+        "fields": [
+          { "key": "vault",    "label": "Vault file path",  "default": "~/.enigmagent/vault.json", "required": true },
+          { "key": "username", "label": "Vault username",    "default": "",                          "required": true },
+          { "key": "password", "label": "Vault password",    "default": "",                          "required": true, "secret": true },
+          { "key": "port",     "label": "REST API port",     "default": "3737",                      "required": false }
+        ]
+      }
+    },
+    {
+      "method": "shell.run",
+      "params": {
+        "message": "🤖 Starting EnigmAgent MCP Server on REST port {{input.port}}...",
+        "path":    "app",
+        "env": {
+          "ENIGMAGENT_VAULT": "{{input.vault}}",
+          "ENIGMAGENT_USER":  "{{input.username}}",
+          "ENIGMAGENT_PASS":  "{{input.password}}"
+        },
+        "cmds": ["node platforms/mcp-server/index.js --mode rest --port {{input.port}}"]
+      }
+    }
+  ]
+}

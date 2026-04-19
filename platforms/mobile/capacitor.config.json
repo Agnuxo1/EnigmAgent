@@ -1,0 +1,25 @@
+{
+  "appId":    "io.github.agnuxo1.enigmagent",
+  "appName":  "EnigmAgent",
+  "webDir":   "www",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration":    3000,
+      "backgroundColor":       "#0d1117",
+      "androidSplashResourceName": "splash",
+      "showSpinner":           false
+    },
+    "Keyboard": {
+      "resize":                "body",
+      "style":                 "dark"
+    },
+    "StatusBar": {
+      "style":                 "dark",
+      "backgroundColor":       "#0d1117"
+    }
+  }
+}

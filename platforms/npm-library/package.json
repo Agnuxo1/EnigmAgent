@@ -1,0 +1,31 @@
+{
+  "name": "@enigmagent/vault",
+  "version": "0.2.0",
+  "description": "EnigmAgent vault library — AES-256-GCM + Argon2id encrypted secret store compatible with the browser extension. For Node.js, Deno and Bun.",
+  "type": "module",
+  "main": "src/index.js",
+  "types": "src/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.js",
+      "types":  "./src/index.d.ts"
+    }
+  },
+  "files": ["src/", "README.md"],
+  "scripts": {
+    "test": "node --test test/*.js"
+  },
+  "dependencies": {
+    "@noble/hashes": "1.4.0"
+  },
+  "peerDependencies": {},
+  "engines": { "node": ">=18" },
+  "keywords": [
+    "vault", "secrets", "encryption", "argon2", "aes-gcm",
+    "ai-agents", "enigmagent", "mcp", "credential-management"
+  ],
+  "author": "Francisco Angulo de Lafuente <agnuxo1@gmail.com>",
+  "license": "MIT",
+  "repository": { "type": "git", "url": "https://github.com/agnuxo1/EnigmAgent", "directory": "platforms/npm-library" },
+  "homepage": "https://github.com/agnuxo1/EnigmAgent#readme"
+}

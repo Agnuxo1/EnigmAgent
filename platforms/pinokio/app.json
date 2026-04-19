@@ -1,0 +1,23 @@
+{
+  "title":       "EnigmAgent",
+  "description": "Encrypted local vault for AI agents. Resolve {{SECRET_NAME}} references from any local AI app — Open WebUI, AnythingLLM, ComfyUI, Ollama and more.",
+  "icon":        "icon.png",
+  "menu": [
+    {
+      "text": "⚙️  Install",
+      "href": "install.json"
+    },
+    {
+      "text": "🔓 Start Vault",
+      "href": "start.json"
+    },
+    {
+      "text": "🤖 Start MCP Server",
+      "href": "start-mcp.json"
+    },
+    {
+      "text": "🌐 Open Browser Extension",
+      "href": "open-extension.json"
+    }
+  ]
+}

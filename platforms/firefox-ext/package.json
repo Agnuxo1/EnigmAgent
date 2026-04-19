@@ -1,0 +1,22 @@
+{
+  "name": "enigmagent-firefox-ext",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Build scripts for EnigmAgent Firefox / Edge / Opera extension",
+  "type": "module",
+  "scripts": {
+    "build:firefox": "node build.js firefox",
+    "build:edge":    "node build.js edge",
+    "build:opera":   "node build.js opera",
+    "build:all":     "node build.js firefox && node build.js edge && node build.js opera",
+    "lint":          "web-ext lint --source-dir dist/firefox"
+  },
+  "author": "Francisco Angulo de Lafuente <agnuxo1@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "web-ext": "^8.2.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

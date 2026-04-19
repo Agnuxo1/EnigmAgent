@@ -1,0 +1,44 @@
+{
+  "name": "enigmagent-desktop",
+  "version": "0.2.0",
+  "description": "EnigmAgent Desktop — encrypted vault app for Windows, macOS and Linux",
+  "main": "main.js",
+  "scripts": {
+    "setup": "node setup.js",
+    "start": "electron .",
+    "dist":  "electron-builder --dir",
+    "pack:win":   "electron-builder --win",
+    "pack:mac":   "electron-builder --mac",
+    "pack:linux": "electron-builder --linux"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "electron":         "^32.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId":       "io.github.agnuxo1.enigmagent",
+    "productName": "EnigmAgent",
+    "copyright":   "Copyright © 2025 Francisco Angulo de Lafuente",
+    "files": ["main.js", "preload.js", "pwa/**/*"],
+    "directories": { "output": "dist" },
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon":   "resources/icon-256.ico"
+    },
+    "mac": {
+      "target": [{ "target": "dmg", "arch": ["x64", "arm64"] }],
+      "icon":   "resources/icon-512.icns",
+      "category": "public.app-category.productivity"
+    },
+    "linux": {
+      "target": [{ "target": "AppImage", "arch": ["x64"] }],
+      "icon":   "resources/icon-256.png",
+      "category": "Utility"
+    }
+  },
+  "author": "Francisco Angulo de Lafuente <agnuxo1@gmail.com>",
+  "license": "MIT",
+  "repository": { "type": "git", "url": "https://github.com/agnuxo1/EnigmAgent" },
+  "engines": { "node": ">=18" }
+}

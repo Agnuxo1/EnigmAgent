@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Encrypted local vault for AI agents — works on any device.">
+  <meta name="theme-color" content="#0d1117">
+  <title>EnigmAgent Vault</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">🔒</span>
+      <span class="title">EnigmAgent</span>
+      <span class="tagline">local vault · no network · no telemetry</span>
+    </div>
+    <div class="status" id="status">locked</div>
+  </header>
+
+  <main id="app">
+    <section id="view-auth" class="view active">
+      <div class="card">
+        <h1>Unlock your vault</h1>
+        <p class="muted">Your vault lives on this device, encrypted with
+          AES-256-GCM and a key derived via Argon2id. Nothing is sent over the network.</p>
+
+        <label>Username
+          <input id="auth-user" type="text" autocomplete="username" autocapitalize="off" spellcheck="false">
+        </label>
+        <label>Password
+          <input id="auth-pass" type="password" autocomplete="current-password">
+        </label>
+
+        <div class="row">
+          <button id="btn-unlock" class="primary">Unlock</button>
+          <button id="btn-create" class="secondary">Create new vault</button>
+        </div>
+
+        <details class="import">
+          <summary>Import / export a vault file</summary>
+          <p class="muted small">Import a vault exported from another device or the browser extension.</p>
+          <input id="vault-file" type="file" accept=".json,.vault,application/json">
+        </details>
+
+        <p id="auth-msg" hidden></p>
+        <p id="auth-progress" class="progress" hidden>Deriving key with Argon2id… this takes a second by design.</p>
+      </div>
+    </section>
+
+    <section id="view-vault" class="view">
+      <aside class="sidebar">
+        <div class="sidebar-head">
+          <h2>Secrets</h2>
+          <button id="btn-add" class="small">+ new</button>
+        </div>
+        <ul id="secret-list" class="secret-list"></ul>
+        <div class="sidebar-foot">
+          <button id="btn-export" class="small">Export</button>
+          <button id="btn-lock" class="small danger">Lock</button>
+        </div>
+      </aside>
+
+      <section class="chat">
+        <div id="chat-log" class="chat-log">
+          <div class="msg sys">
+            <p><strong>Vault unlocked.</strong> Manage your secrets below, or drop a <code>.md</code> / <code>.txt</code> document into this window.</p>
+            <p class="muted">Use <strong>reveal</strong> or the edit modal to copy a secret value. Install the browser extension to enable automatic <code>{{SECRET_NAME}}</code> injection in form fields.</p>
+            <p class="muted">Try: <code>help</code> · <code>list</code> · <code>add API_KEY @example.com your-secret-value</code></p>
+          </div>
+        </div>
+
+        <form id="chat-form" class="chat-form">
+          <textarea id="chat-input" rows="2" placeholder="type a command or ask the vault…"></textarea>
+          <div class="chat-actions">
+            <label class="file-btn">
+              📎 Upload
+              <input id="doc-upload" type="file" accept=".md,.txt" hidden>
+            </label>
+            <button type="submit" class="primary">Send</button>
+          </div>
+        </form>
+      </section>
+    </section>
+
+    <div id="modal" class="modal" hidden>
+      <div class="modal-card">
+        <h3 id="modal-title">New secret</h3>
+        <label>Name <input id="m-name" placeholder="API_KEY"></label>
+        <label>Domain <small>(required — restricts resolution to this origin)</small>
+          <input id="m-domain" placeholder="example.com">
+        </label>
+        <label>Value
+          <textarea id="m-value" rows="3" placeholder="enter the secret value"></textarea>
+        </label>
+        <div class="row">
+          <button id="m-save" class="primary">Save</button>
+          <button id="m-copy" class="secondary">Copy value</button>
+          <button id="m-cancel" class="secondary">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <span>EnigmAgent v0.2 · MIT · <a id="repo-link" href="https://github.com/agnuxo1/EnigmAgent" target="_blank" rel="noopener">github</a></span>
+    <span id="pwa-install" hidden style="margin-left:1rem">
+      <button id="btn-install" class="small">📲 Install app</button>
+    </span>
+  </footer>
+
+  <script src="lib/argon2id.js"></script>
+  <script src="vault-pwa.js"></script>
+</body>
+</html>
