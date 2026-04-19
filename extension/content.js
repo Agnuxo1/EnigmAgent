@@ -53,7 +53,15 @@ function showBadge(opts) {
   _badgeEl.textContent = opts.text;
   _badgeEl.style.color  = opts.error ? '#f06464' : (opts.ok ? '#7bd389' : '#e7e9ee');
   _badgeEl.style.opacity = opts.visible ? '1' : '0';
-  if (opts.autoHide) setTimeout(() => { _badgeEl.style.opacity = '0'; }, 2600);
+
+  // Expose state on the host element (regular DOM) for automated testing.
+  // Shadow DOM content is closed, but data attributes are readable by Playwright.
+  _badgeHost.dataset.state = opts.error ? 'error' : (opts.ok ? 'ok' : 'pending');
+  _badgeHost.dataset.text  = opts.text || '';
+
+  if (opts.autoHide) setTimeout(() => {
+    _badgeEl.style.opacity = '0';
+  }, 2600);
 }
 
 // ---------- submit interception ----------

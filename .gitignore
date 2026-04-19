@@ -30,6 +30,10 @@ __pycache__/
 .venv/
 venv/
 
+# Playwright E2E artefacts
+playwright-report/
+test-results/
+
 # Logs / temp
 *.log
 .tmp/
