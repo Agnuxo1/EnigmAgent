@@ -1,0 +1,38 @@
+{
+  "name": "@enigmagent/paperclip-secrets-provider",
+  "version": "0.2.0",
+  "description": "EnigmAgent encrypted vault — secrets provider for Paperclip. Routes {{ secret.KEY }} resolution through the local EnigmAgent vault so real values never appear in LLM context.",
+  "license": "MIT",
+  "author": "agnuxo1",
+  "homepage": "https://github.com/agnuxo1/EnigmAgent",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/agnuxo1/EnigmAgent",
+    "directory": "platforms/paperclip/packages/secrets-provider-enigmagent"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types":  "./dist/index.d.ts"
+    },
+    "./vault-client": {
+      "import": "./dist/vault-client.js",
+      "types":  "./dist/vault-client.d.ts"
+    }
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build":       "tsc --project tsconfig.json",
+    "typecheck":   "tsc --noEmit",
+    "clean":       "rm -rf dist",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  },
+  "engines": { "node": ">=18.0.0" },
+  "keywords": ["paperclip", "enigmagent", "vault", "secrets", "ai-agents", "aes-gcm", "argon2"]
+}

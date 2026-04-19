@@ -1,0 +1,50 @@
+{
+  "name": "@enigmagent/paperclip-plugin",
+  "version": "0.2.0",
+  "description": "EnigmAgent encrypted vault plugin for Paperclip. Provides vault_status and vault_list tools, integrates with the {{ secret.KEY }} resolution pipeline.",
+  "license": "MIT",
+  "author": "agnuxo1",
+  "homepage": "https://github.com/agnuxo1/EnigmAgent",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/agnuxo1/EnigmAgent",
+    "directory": "platforms/paperclip/packages/plugin-enigmagent"
+  },
+  "type": "module",
+  "main": "dist/worker.js",
+  "exports": {
+    ".": {
+      "import": "./dist/worker.js",
+      "types":  "./dist/worker.d.ts"
+    },
+    "./manifest": {
+      "import": "./dist/manifest.js",
+      "types":  "./dist/manifest.d.ts"
+    }
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build":       "tsc --project tsconfig.json",
+    "typecheck":   "tsc --noEmit",
+    "clean":       "rm -rf dist",
+    "prepublishOnly": "npm run build"
+  },
+  "peerDependencies": {
+    "@paperclipai/plugin-sdk": ">=1.0.0"
+  },
+  "devDependencies": {
+    "@paperclipai/plugin-sdk": "latest",
+    "typescript": "^5.4.0"
+  },
+  "engines": { "node": ">=20.0.0" },
+  "keywords": [
+    "paperclip",
+    "paperclip-plugin",
+    "enigmagent",
+    "vault",
+    "secrets",
+    "ai-agents",
+    "aes-gcm",
+    "argon2"
+  ]
+}
