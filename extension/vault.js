@@ -193,7 +193,24 @@ async function revealSecret(id) {
   return decryptString(state.key, e.nonce, e.ciphertext);
 }
 function findByName(name) {
-  return state.vault.entries.find(e => e.name.toLowerCase() === name.toLowerCase());
+  const lower = name.toLowerCase();
+
+  // LOGIN:domain — first secret whose domain matches (case-insensitive)
+  // Lets an agent write {{LOGIN:github.com}} without knowing the secret name.
+  if (lower.startsWith('login:')) {
+    const dom = lower.slice(6);
+    return state.vault.entries.find(e => e.domain?.toLowerCase() === dom);
+  }
+
+  // DOC:filename — document stored via the upload button (name prefix DOC_)
+  // Lets an agent embed a full document with {{DOC:report.md}}.
+  if (lower.startsWith('doc:')) {
+    const raw = name.slice(4).replace(/[^A-Za-z0-9_.\-]/g, '_');
+    const docName = 'DOC_' + raw;
+    return state.vault.entries.find(e => e.name.toLowerCase() === docName.toLowerCase());
+  }
+
+  return state.vault.entries.find(e => e.name.toLowerCase() === lower);
 }
 
 // ---------- UI helpers ----------
@@ -248,15 +265,23 @@ function addChatMsg(kind, html) {
 
 // ---------- chat command parser ----------
 
-const HELP_TEXT = `list                          list all stored secret names
-add NAME @domain value...     add a domain-bound secret (recommended)
-add NAME value...             add without domain binding (not recommended)
+const HELP_TEXT = `Commands
+────────────────────────────────────────────────
+list                          list all stored secret names
+add NAME @domain value        add a domain-bound secret (recommended)
+add NAME value                add without domain binding (not recommended)
 get NAME                      show a masked preview of the value
 reveal NAME                   show the full value (use with care)
 rename OLD NEW                rename a secret
 domain NAME @newdomain        reassign the bound domain
 del NAME                      permanently delete a secret
-help                          show this reference`;
+help                          show this reference
+
+Secret reference syntax (use in form fields)
+────────────────────────────────────────────────
+{{MY_TOKEN}}                  resolve by exact secret name
+{{LOGIN:github.com}}          resolve first secret bound to that domain
+{{DOC:report.md}}             embed a stored document by filename`;
 
 async function runCommand(input) {
   const text = input.trim();

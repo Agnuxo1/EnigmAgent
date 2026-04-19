@@ -1,11 +1,16 @@
 /*
  * EnigmAgent — content script.
  *
- * Watches every form submit on every page. When it finds a {{PLACEHOLDER}} in
- * any input/textarea value, it pauses the submit, asks the service worker to
- * resolve the placeholder against the unlocked vault (checking domain binding),
- * writes the real value directly into the DOM field via the native property
- * setter (so React/Vue notice), then re-submits the form exactly once.
+ * Watches every form submit on every page. When it finds a {{SECRET_NAME}}
+ * reference in any input/textarea value, it pauses the submit, asks the
+ * service worker to resolve it against the unlocked vault (checking domain
+ * binding), writes the real value via the native property setter (React/Vue
+ * compatible), then re-submits the form exactly once.
+ *
+ * Special reference syntax:
+ *   {{MY_TOKEN}}          — resolve by exact secret name
+ *   {{LOGIN:github.com}}  — resolve first secret bound to that domain
+ *   {{DOC:report.md}}     — resolve a stored document by filename
  *
  * The real value is in JS memory for roughly one event-loop tick. It is never
  * written to the clipboard, to console, or to any logging channel.
@@ -13,38 +18,49 @@
 
 'use strict';
 
-const PLACEHOLDER_RE = /\{\{([A-Z0-9_:\-.@]+)\}\}/g;
-const BADGE_ID = '__enigmagent_badge__';
+// Matches {{NAME}}, {{LOGIN:domain}}, {{DOC:file}} — case-insensitive name part
+const PLACEHOLDER_RE = /\{\{([A-Za-z0-9_:\-.@]+)\}\}/g;
 const DONE_FLAG = 'enigmaDone';
 
-// ---------- badge ----------
+// ---------- badge — Shadow DOM (fully isolated from host-page CSS) ----------
 
-function showBadge(state) {
-  let el = document.getElementById(BADGE_ID);
-  if (!el) {
-    el = document.createElement('div');
-    el.id = BADGE_ID;
-    el.style.cssText = [
-      'position:fixed', 'bottom:12px', 'right:12px', 'z-index:2147483647',
-      'background:#171a21', 'color:#e7e9ee',
-      'font:12px/1.4 -apple-system,Segoe UI,sans-serif',
-      'padding:6px 10px', 'border:1px solid #2a2f3a', 'border-radius:999px',
-      'box-shadow:0 2px 8px rgba(0,0,0,.35)', 'pointer-events:none',
-      'opacity:0', 'transition:opacity .25s',
+let _badgeHost = null;
+let _badgeEl   = null;
+
+function showBadge(opts) {
+  if (!_badgeHost) {
+    _badgeHost = document.createElement('enigmagent-badge');
+    _badgeHost.style.cssText =
+      'position:fixed;bottom:12px;right:12px;z-index:2147483647;pointer-events:none;display:block;';
+    const shadow = _badgeHost.attachShadow({ mode: 'closed' });
+    _badgeEl = document.createElement('span');
+    _badgeEl.style.cssText = [
+      'display:inline-block',
+      'background:#171a21',
+      'color:#e7e9ee',
+      'font:12px/1.4 -apple-system,"Segoe UI",sans-serif',
+      'padding:6px 12px',
+      'border:1px solid #2a2f3a',
+      'border-radius:999px',
+      'box-shadow:0 2px 8px rgba(0,0,0,.4)',
+      'opacity:0',
+      'transition:opacity .25s ease',
+      'white-space:nowrap',
     ].join(';');
-    (document.documentElement || document.body).appendChild(el);
+    shadow.appendChild(_badgeEl);
+    (document.documentElement || document.body).appendChild(_badgeHost);
   }
-  el.textContent = state.text;
-  el.style.opacity = state.visible ? '1' : '0';
-  el.style.color = state.error ? '#f06464' : (state.ok ? '#7bd389' : '#e7e9ee');
-  if (state.autoHide) setTimeout(() => { el.style.opacity = '0'; }, 2600);
+  _badgeEl.textContent = opts.text;
+  _badgeEl.style.color  = opts.error ? '#f06464' : (opts.ok ? '#7bd389' : '#e7e9ee');
+  _badgeEl.style.opacity = opts.visible ? '1' : '0';
+  if (opts.autoHide) setTimeout(() => { _badgeEl.style.opacity = '0'; }, 2600);
 }
 
 // ---------- submit interception ----------
 
 document.addEventListener('submit', onSubmit, { capture: true });
 
-function hasPlaceholder(s) {
+function hasReference(s) {
   if (typeof s !== 'string') return false;
   PLACEHOLDER_RE.lastIndex = 0;
   const r = PLACEHOLDER_RE.test(s);
@@ -58,13 +74,13 @@ async function onSubmit(e) {
   if (form.dataset[DONE_FLAG] === '1') return;
 
   const fields = [...form.querySelectorAll('input, textarea')]
-    .filter(el => hasPlaceholder(el.value));
+    .filter(el => hasReference(el.value));
   if (fields.length === 0) return;
 
   e.preventDefault();
   e.stopImmediatePropagation();
 
-  showBadge({ text: '🔓 resolving placeholders…', visible: true });
+  showBadge({ text: '🔓 EnigmAgent: resolving secrets…', visible: true });
 
   try {
     for (const el of fields) {
@@ -81,7 +97,9 @@ async function onSubmit(e) {
 }
 
 async function resolveValue(template) {
+  PLACEHOLDER_RE.lastIndex = 0;
   const matches = [...template.matchAll(PLACEHOLDER_RE)];
+  PLACEHOLDER_RE.lastIndex = 0;
   let out = template;
   for (const m of matches) {
     const reply = await chrome.runtime.sendMessage({
@@ -91,17 +109,18 @@ async function resolveValue(template) {
     });
     if (reply?.error) {
       let msg = `${m[1]}: ${reply.error}`;
-      if (reply.error === 'domain_mismatch' && reply.expected) {
+      if (reply.error === 'domain_mismatch' && reply.expected)
         msg = `${m[1]}: bound to ${reply.expected}, refused on ${location.hostname}`;
-      }
-      if (reply.error === 'vault_not_open') msg = 'vault not open — click the EnigmAgent icon';
-      if (reply.error === 'vault_locked') msg = 'vault is locked — open the vault tab and unlock';
-      if (reply.error === 'no_domain_binding') msg = `${m[1]}: needs a domain binding, refused`;
+      if (reply.error === 'vault_not_open')
+        msg = 'vault not open — click the EnigmAgent icon';
+      if (reply.error === 'vault_locked')
+        msg = 'vault is locked — open the vault tab and unlock it';
+      if (reply.error === 'no_domain_binding')
+        msg = `${m[1]}: no domain binding — add one with: domain ${m[1]} @example.com`;
       throw new Error(msg);
     }
-    if (typeof reply?.value !== 'string') {
-      throw new Error(`${m[1]}: empty response`);
-    }
+    if (typeof reply?.value !== 'string')
+      throw new Error(`${m[1]}: no value returned from vault`);
     out = out.split(m[0]).join(reply.value);
   }
   return out;
@@ -112,11 +131,11 @@ function setInputValue(el, value) {
     ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
   const setter = Object.getOwnPropertyDescriptor(proto, 'value').set;
   setter.call(el, value);
-  el.dispatchEvent(new Event('input', { bubbles: true }));
+  el.dispatchEvent(new Event('input',  { bubbles: true }));
   el.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
-// ---------- first-paint hint on sensitive pages ----------
+// ---------- first-paint hint on pages with credential fields ----------
 
 window.addEventListener('load', async () => {
   const sensitive = document.querySelector(
@@ -127,8 +146,8 @@ window.addEventListener('load', async () => {
   try {
     const status = await chrome.runtime.sendMessage({ type: 'status' });
     showBadge({
-      text: status?.vaultTabId ? '🔓 EnigmAgent ready' : '🔒 EnigmAgent · click icon to unlock',
+      text: status?.vaultTabId ? '🔓 EnigmAgent ready' : '🔒 EnigmAgent · click icon to open vault',
       visible: true, ok: !!status?.vaultTabId, autoHide: true,
     });
-  } catch { /* extension context missing, ignore */ }
+  } catch { /* extension context invalidated, ignore */ }
 });
