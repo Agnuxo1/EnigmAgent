@@ -1,0 +1,57 @@
+name: enigmagent
+version: 0.2.0
+description: >
+  Encrypted local vault for Hermes agents. Resolves {{PLACEHOLDER}} secret
+  references in tool arguments at execution time — secret values never reach
+  the LLM context.
+author: agnuxo1
+homepage: https://github.com/agnuxo1/EnigmAgent
+license: MIT
+
+provides_tools:
+  - enigmagent_vault_status
+  - enigmagent_vault_list
+
+provides_hooks:
+  - pre_tool_call
+
+configuration:
+  host:
+    type: string
+    default: "127.0.0.1"
+    description: >
+      Host of the EnigmAgent REST API. Do not change to 0.0.0.0 — the vault
+      must never be exposed to the network.
+
+  port:
+    type: integer
+    default: 3737
+    description: Port of the EnigmAgent REST API.
+
+  strict_mode:
+    type: boolean
+    default: false
+    description: >
+      If true, tool calls containing unresolvable {{PLACEHOLDER}} references
+      are BLOCKED with an error. Recommended for production to avoid silently
+      passing raw placeholder strings to external services.
+
+  timeout_s:
+    type: number
+    default: 5.0
+    description: Per-request timeout in seconds when contacting the vault server.
+
+requires:
+  hermes: ">=0.8.0"
+  python: ">=3.11"
+
+external_process:
+  description: >
+    The EnigmAgent vault server must be started separately before launching
+    Hermes. It handles decryption and secret resolution.
+  start_command: >
+    enigmagent-mcp --mode rest --port 3737 --vault ~/.enigmagent/vault.json
+  health_check:
+    url: "http://127.0.0.1:3737/status"
+    expected_key: unlocked
+    expected_value: true
