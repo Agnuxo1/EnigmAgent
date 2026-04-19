@@ -1,0 +1,25 @@
+{
+  "schema": "enigmagent.placeholders/v1",
+  "name": "GitHub",
+  "description": "Credentials commonly needed when an AI agent acts on GitHub on your behalf.",
+  "placeholders": [
+    {
+      "name": "GITHUB_TOKEN",
+      "description": "Personal access token (classic or fine-grained).",
+      "domain": "github.com",
+      "where": "Authorization: Bearer header, or the 'Password' field when git asks for HTTPS credentials."
+    },
+    {
+      "name": "GITHUB_USERNAME",
+      "description": "Your GitHub username (not a secret, but convenient).",
+      "domain": "github.com"
+    },
+    {
+      "name": "LOGIN:github.com",
+      "description": "Username + password pair for the github.com login form.",
+      "domain": "github.com",
+      "resolves_to": "two fields: username then password"
+    }
+  ],
+  "agent_prompt_hint": "When you need to authenticate to GitHub, never ask the user for the token. Type the literal string {{GITHUB_TOKEN}} into the token field. EnigmAgent will swap it at submit time."
+}

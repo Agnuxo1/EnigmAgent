@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>EnigmAgent Bridge — placeholder demo</title>
+  <style>
+    body { font: 14px/1.5 -apple-system, Segoe UI, sans-serif;
+      max-width: 600px; margin: 40px auto; padding: 20px; background: #f7f8fa; }
+    h1 { margin-top: 0; }
+    form { background: white; padding: 20px; border-radius: 8px;
+      border: 1px solid #ddd; }
+    label { display: block; margin: 12px 0 4px; font-size: 13px; color: #555; }
+    input { width: 100%; padding: 8px; font-family: ui-monospace, monospace;
+      border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+    button { margin-top: 16px; padding: 10px 16px; background: #5aa0ff;
+      color: white; border: none; border-radius: 6px; cursor: pointer; }
+    .out { background: #222; color: #aef; padding: 12px; border-radius: 6px;
+      font-family: ui-monospace, monospace; font-size: 12px; margin-top: 16px;
+      white-space: pre-wrap; word-break: break-all; }
+    .muted { color: #888; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h1>Placeholder swap demo</h1>
+  <p>Load the EnigmAgent extension, unlock your vault, and add a secret
+     named <code>DEMO_TOKEN</code>. Then click Submit below — the field
+     should contain your real token at submit time, not the placeholder.</p>
+
+  <form id="f">
+    <label>API token</label>
+    <input name="token" value="{{DEMO_TOKEN}}">
+
+    <label>Username</label>
+    <input name="username" value="{{DEMO_USERNAME}}">
+
+    <button type="submit">Submit</button>
+  </form>
+
+  <div id="out" class="out" hidden></div>
+
+  <script>
+    const form = document.getElementById('f');
+    const out = document.getElementById('out');
+    form.addEventListener('submit', (e) => {
+      // Only the *outer* submit (after bridge swap) reaches here, thanks to
+      // form.dataset.enigmaDone being set by content.js.
+      e.preventDefault();
+      const fd = new FormData(form);
+      const obj = {};
+      for (const [k, v] of fd.entries()) obj[k] = v;
+      out.hidden = false;
+      out.textContent = 'What would be POSTed:\n' + JSON.stringify(obj, null, 2);
+    });
+  </script>
+</body>
+</html>

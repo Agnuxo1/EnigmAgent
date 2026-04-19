@@ -1,0 +1,32 @@
+# Vault data — must never be committed
+vault-app/data/
+*.vault
+*.vault.json
+secrets.json
+
+# Node / extension build
+node_modules/
+dist/
+build/
+*.zip
+*.xpi
+*.crx
+web-ext-artifacts/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Python (for tooling)
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Logs / temp
+*.log
+.tmp/

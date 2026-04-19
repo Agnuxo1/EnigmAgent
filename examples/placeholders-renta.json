@@ -1,0 +1,22 @@
+{
+  "schema": "enigmagent.placeholders/v1",
+  "name": "Declaración de la Renta (Spain)",
+  "description": "Personal data commonly needed to fill the Spanish annual tax return. Keep this data in your local vault; let the agent only see placeholder names.",
+  "placeholders": [
+    { "name": "NIF",           "description": "DNI/NIE number" },
+    { "name": "FIRST_NAME",    "description": "Nombre" },
+    { "name": "LAST_NAME_1",   "description": "Primer apellido" },
+    { "name": "LAST_NAME_2",   "description": "Segundo apellido" },
+    { "name": "BIRTH_DATE",    "description": "Fecha de nacimiento (DD/MM/YYYY)" },
+    { "name": "ADDRESS",       "description": "Domicilio fiscal completo" },
+    { "name": "POSTAL_CODE",   "description": "Código postal" },
+    { "name": "CITY",          "description": "Municipio" },
+    { "name": "PROVINCE",      "description": "Provincia" },
+    { "name": "IBAN",          "description": "Número de cuenta bancaria (IBAN)" },
+    { "name": "PHONE",         "description": "Teléfono de contacto" },
+    { "name": "EMAIL",         "description": "Correo electrónico" },
+    { "name": "REFERENCE_RENTA", "description": "Número de referencia del ejercicio anterior", "domain": "agenciatributaria.gob.es" },
+    { "name": "CLAVE_PIN",     "description": "Código Cl@ve PIN", "domain": "agenciatributaria.gob.es" }
+  ],
+  "agent_prompt_hint": "When filling the Renta form, use placeholder names like {{NIF}}, {{IBAN}}, {{BIRTH_DATE}}. Never repeat the actual values back to the user, and never write them to the chat log."
+}

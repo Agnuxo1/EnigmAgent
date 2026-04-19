@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "EnigmAgent Bridge",
+  "version": "0.1.0",
+  "description": "Swap {{PLACEHOLDER}} tokens in form fields for real values decrypted by a local EnigmAgent vault. The LLM never sees your secrets.",
+  "author": "Francisco Angulo de Lafuente",
+  "homepage_url": "https://github.com/agnuxo1/EnigmAgent",
+  "permissions": ["storage", "scripting", "activeTab"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "EnigmAgent",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["vault-tab.html"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
