@@ -1,0 +1,21 @@
+{
+  "_comment": "Samsung Galaxy Store listing metadata — submit via https://seller.samsungapps.com/",
+  "_submission_steps": [
+    "1. Register at seller.samsungapps.com",
+    "2. Click 'Add New App'",
+    "3. Upload APK from platforms/mobile/ build",
+    "4. Fill metadata below under 'App Information'"
+  ],
+  "appName": "EnigmAgent — AI Secret Vault",
+  "packageName": "com.enigmagent.vault",
+  "shortDescription": "Encrypted local vault for AI agents. Store credentials, reference as {{PLACEHOLDER}}.",
+  "fullDescription": "EnigmAgent is a privacy-first credential vault for AI developers and automation engineers.\n\nInstead of hardcoding API keys, tokens, and passwords in AI agent prompts — store them locally in AES-256-GCM encrypted storage and reference them as {{PLACEHOLDER}} symbols.\n\nThe vault resolves them at execution time. Your credentials never appear in AI context windows, logs, or cloud services.\n\n✅ Features:\n• AES-256-GCM + Argon2id encryption\n• {{PLACEHOLDER}} reference system\n• 40+ AI framework integrations (LangChain, CrewAI, AutoGen, n8n, etc.)\n• Full offline operation\n• Samsung DeX compatible\n• No accounts, no cloud, no telemetry\n\nIdeal for: AI developers, DevOps engineers, security-conscious power users.",
+  "category": "Productivity",
+  "contentRating": "Everyone",
+  "privacyPolicyUrl": "https://enigmagent.com/privacy",
+  "supportUrl": "https://github.com/enigmagent/enigmagent/issues",
+  "websiteUrl": "https://enigmagent.com",
+  "version": "1.0.0",
+  "countryAvailability": "ALL",
+  "price": "Free"
+}

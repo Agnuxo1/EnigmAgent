@@ -1,0 +1,92 @@
+<idea-plugin>
+    <id>com.enigmagent.vault</id>
+    <name>EnigmAgent Vault</name>
+    <version>1.0.0</version>
+    <vendor email="dev@enigmagent.com" url="https://enigmagent.com">EnigmAgent</vendor>
+
+    <description><![CDATA[
+        <p><b>EnigmAgent Vault</b> — secure local credential management for AI agent developers.</p>
+
+        <p>Store API keys, tokens, and passwords in a local AES-256-GCM encrypted vault.
+        Reference them as <code>{{PLACEHOLDER}}</code> in HTTP client files, run configurations,
+        and terminal — resolved at execution time. Nothing leaves your machine.</p>
+
+        <h3>Features</h3>
+        <ul>
+            <li>🔒 Vault status panel — always know if your vault is unlocked</li>
+            <li>📋 Secret browser — list names and domains, never values</li>
+            <li>⚡ One-click placeholder copy — <code>{{SECRET_NAME}}</code> to clipboard</li>
+            <li>🔗 HTTP client integration — auto-resolves placeholders in .http files</li>
+            <li>🤖 Works with LangChain, CrewAI, AutoGen, n8n, and 40+ AI frameworks</li>
+        </ul>
+
+        <h3>Quick Start</h3>
+        <ol>
+            <li>Install EnigmAgent: <code>npm install -g enigmagent-mcp</code></li>
+            <li>Start vault: <code>enigmagent-mcp --mode rest --port 3737</code></li>
+            <li>Open <b>View → Tool Windows → EnigmAgent</b></li>
+        </ol>
+
+        <p><a href="https://docs.enigmagent.com">Documentation</a> |
+           <a href="https://github.com/enigmagent/enigmagent/issues">Issues</a></p>
+    ]]></description>
+
+    <change-notes><![CDATA[
+        <ul><li><b>1.0.0</b>: Initial release — vault panel, secret browser, placeholder actions</li></ul>
+    ]]></change-notes>
+
+    <idea-version since-build="241" until-build="999.*"/>
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- Tool window -->
+        <toolWindow
+            id="EnigmAgent"
+            displayName="EnigmAgent"
+            anchor="right"
+            secondary="false"
+            icon="/icons/enigmagent.svg"
+            factoryClass="com.enigmagent.vault.ui.EnigmAgentToolWindowFactory"/>
+
+        <!-- Persistent settings -->
+        <applicationService
+            serviceImplementation="com.enigmagent.vault.settings.EnigmAgentSettings"/>
+
+        <!-- Settings page -->
+        <applicationConfigurable
+            parentId="tools"
+            instance="com.enigmagent.vault.settings.EnigmAgentSettingsConfigurable"
+            id="com.enigmagent.vault.settings"
+            displayName="EnigmAgent Vault"/>
+
+        <!-- Notifications -->
+        <notificationGroup
+            id="EnigmAgent"
+            displayType="BALLOON"
+            isLogByDefault="false"/>
+    </extensions>
+
+    <actions>
+        <group id="EnigmAgent.ActionGroup" text="EnigmAgent" popup="true">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+
+            <action id="EnigmAgent.VaultStatus"
+                    class="com.enigmagent.vault.actions.VaultStatusAction"
+                    text="Check Vault Status"
+                    description="Check if the EnigmAgent vault is running and unlocked"
+                    icon="/icons/enigmagent.svg"/>
+
+            <action id="EnigmAgent.ListSecrets"
+                    class="com.enigmagent.vault.actions.ListSecretsAction"
+                    text="Browse Secrets"
+                    description="Open the EnigmAgent secret browser"/>
+
+            <separator/>
+
+            <action id="EnigmAgent.CopyPlaceholder"
+                    class="com.enigmagent.vault.actions.CopyPlaceholderAction"
+                    text="Copy {{Placeholder}} to Clipboard"
+                    description="Select a secret and copy its {{PLACEHOLDER}} reference"/>
+        </group>
+    </actions>
+</idea-plugin>

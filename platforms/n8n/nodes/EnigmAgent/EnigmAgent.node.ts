@@ -3,7 +3,7 @@ import {
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
-	NodeApiError,
+	IDataObject,
 	NodeOperationError,
 } from 'n8n-workflow';
 
@@ -123,7 +123,7 @@ export class EnigmAgent implements INodeType {
 
 		for (let i = 0; i < items.length; i++) {
 			try {
-				let output: Record<string, unknown> = {};
+				let output: IDataObject = {};
 
 				if (operation === 'getStatus') {
 					const response = await this.helpers.httpRequest({

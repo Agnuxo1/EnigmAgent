@@ -1,0 +1,28 @@
+{
+  "_comment": "Huawei AppGallery listing metadata — submit via https://developer.huawei.com/consumer/en/appgallery/",
+  "_submission_steps": [
+    "1. Register at developer.huawei.com",
+    "2. Create app: App type=App, Category=Tools",
+    "3. Upload APK/AAB built from platforms/mobile/ (Capacitor Android)",
+    "4. Fill in metadata below",
+    "5. Submit for review (typical: 3-5 business days)"
+  ],
+  "appName": "EnigmAgent — AI Secret Vault",
+  "packageName": "com.enigmagent.vault",
+  "shortDescription": "Local encrypted vault for AI agents. Store API keys, reference as {{PLACEHOLDER}}. Zero cloud.",
+  "fullDescription": "EnigmAgent is a local-first encrypted vault designed for AI agent developers and power users.\n\nStore API keys, tokens, passwords, and private documents in an AES-256-GCM encrypted vault on your device. Reference them as {{PLACEHOLDER}} symbols in AI prompts and automation scripts — the vault resolves them at execution time. Nothing leaves your device.\n\nKey features:\n• AES-256-GCM + Argon2id key derivation — military-grade encryption\n• {{PLACEHOLDER}} reference system for AI tool calls\n• Integrates with LangChain, CrewAI, AutoGen, n8n, and 40+ AI frameworks\n• Domain-binding: each secret bound to a specific origin\n• 100% offline — no telemetry, no accounts required, no cloud sync\n• Works with Windows, macOS, Linux, Android\n\nHuawei device support: Full HMS compatibility, works without Google Play Services.",
+  "category": "Tools",
+  "contentRating": "Everyone",
+  "privacyPolicyUrl": "https://enigmagent.com/privacy",
+  "websiteUrl": "https://enigmagent.com",
+  "supportEmail": "support@enigmagent.com",
+  "version": "1.0.0",
+  "targetSDK": 34,
+  "minSDK": 24,
+  "screenshots_required": [
+    "vault-dashboard-1080x1920.png",
+    "secret-list-1080x1920.png",
+    "placeholder-resolve-1080x1920.png"
+  ],
+  "icon_required": "icon-512x512.png"
+}

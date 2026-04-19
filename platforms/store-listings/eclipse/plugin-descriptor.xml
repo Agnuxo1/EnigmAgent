@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<!--
+  Eclipse Marketplace listing descriptor.
+  Submit via: https://marketplace.eclipse.org/content/new
+  Also update: https://marketplace.eclipse.org/marketplace-client-intro
+-->
+<plugin>
+  <id>com.enigmagent.vault.eclipse</id>
+  <name>EnigmAgent Vault</name>
+  <version>1.0.0</version>
+  <provider-name>EnigmAgent</provider-name>
+  <license>MIT</license>
+
+  <description>
+    EnigmAgent Vault — Secure local credential management for AI agent developers.
+
+    Store API keys, tokens, and passwords in a local AES-256-GCM encrypted vault.
+    Reference them as {{PLACEHOLDER}} in your code, HTTP requests, and launch configurations.
+    Integrates with LangChain, CrewAI, AutoGen, n8n, and 40+ AI frameworks.
+
+    Features:
+    - Vault status view — know instantly if your vault is running and unlocked
+    - Secret browser — list names and domains, never values
+    - Quick-copy {{PLACEHOLDER}} references to clipboard
+    - Settings page for host/port configuration
+    - Zero telemetry, fully local
+  </description>
+
+  <url>https://enigmagent.com</url>
+  <screenshot>https://enigmagent.com/screenshots/eclipse-panel.png</screenshot>
+  <icon512>https://enigmagent.com/icons/icon-512.png</icon512>
+
+  <tags>
+    <tag>ai</tag>
+    <tag>agents</tag>
+    <tag>security</tag>
+    <tag>vault</tag>
+    <tag>credentials</tag>
+    <tag>developer tools</tag>
+  </tags>
+
+  <categories>
+    <category name="Tools"/>
+    <category name="Programming Languages"/>
+  </categories>
+
+  <requires>
+    <import plugin="org.eclipse.ui"/>
+    <import plugin="org.eclipse.core.runtime"/>
+  </requires>
+
+  <extension point="org.eclipse.ui.views">
+    <view
+      id="com.enigmagent.vault.views.VaultView"
+      name="EnigmAgent Vault"
+      class="com.enigmagent.vault.views.VaultView"
+      category="com.enigmagent.vault"
+      icon="icons/enigmagent16.png"
+      restorable="true"/>
+  </extension>
+
+  <extension point="org.eclipse.ui.commands">
+    <command
+      id="com.enigmagent.vault.commands.checkStatus"
+      name="EnigmAgent: Check Vault Status"
+      description="Check if the EnigmAgent vault is running and unlocked"/>
+    <command
+      id="com.enigmagent.vault.commands.copyPlaceholder"
+      name="EnigmAgent: Copy {{Placeholder}}"
+      description="Copy a vault secret as a {{PLACEHOLDER}} reference"/>
+  </extension>
+</plugin>

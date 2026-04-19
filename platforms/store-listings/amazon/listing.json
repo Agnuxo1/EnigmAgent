@@ -1,0 +1,22 @@
+{
+  "_comment": "Amazon Appstore listing metadata — submit via https://developer.amazon.com/apps-and-games",
+  "_submission_steps": [
+    "1. Sign in to developer.amazon.com",
+    "2. Click 'Add a New App' → Android",
+    "3. Upload APK from platforms/mobile/ build",
+    "4. Complete 'App Information', 'Availability & Pricing', 'Description', 'Images & Multimedia'"
+  ],
+  "title": "EnigmAgent — AI Secret Vault",
+  "packageName": "com.enigmagent.vault",
+  "shortDescription": "Local encrypted vault for AI agents. Zero cloud, zero accounts. AES-256-GCM.",
+  "longDescription": "EnigmAgent is an open-source, local-first secret vault built for AI agent developers and privacy-conscious power users.\n\nThe problem: AI agents need API keys, tokens, and passwords. Hardcoding them in prompts means they appear in LLM context windows, logs, and cloud services.\n\nThe solution: Store credentials in a local AES-256-GCM encrypted vault and reference them as {{PLACEHOLDER}} symbols. EnigmAgent resolves them at execution time — secrets never appear in plaintext outside the vault.\n\nFEATURES:\n★ AES-256-GCM encryption with Argon2id key derivation\n★ {{PLACEHOLDER}} reference system — symbolic in prompts, real at execution\n★ Integrates with LangChain, CrewAI, AutoGen, n8n, and 40+ AI frameworks\n★ Domain-binding security model\n★ Complete offline operation — no accounts, no cloud sync, no telemetry\n★ Fire TV compatible\n\nPERFECT FOR:\n• AI/ML developers building agent workflows\n• DevOps engineers managing deployment secrets\n• Power users who want control over their credentials",
+  "category": "Productivity",
+  "subcategory": "Utilities",
+  "contentRating": "Everyone",
+  "keywords": ["ai", "agents", "vault", "secrets", "security", "credentials", "encryption", "privacy"],
+  "websiteUrl": "https://enigmagent.com",
+  "privacyPolicyUrl": "https://enigmagent.com/privacy",
+  "supportEmail": "support@enigmagent.com",
+  "version": "1.0.0",
+  "basePrice": "Free"
+}
