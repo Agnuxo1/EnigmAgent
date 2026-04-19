@@ -1,0 +1,46 @@
+Categories:
+  - Security
+  - Development
+
+License: MIT
+
+WebSite: https://enigmagent.com
+SourceCode: https://github.com/enigmagent/enigmagent
+IssueTracker: https://github.com/enigmagent/enigmagent/issues
+Changelog: https://github.com/enigmagent/enigmagent/releases
+
+AutoName: EnigmAgent Vault
+
+Summary: Local AI agent credential vault with {{PLACEHOLDER}} resolution
+
+Description: |-
+  EnigmAgent is a local-first encrypted vault for AI agent developers.
+
+  Store API keys, tokens, passwords, and private documents in an AES-256-GCM
+  encrypted vault. Reference them as {{PLACEHOLDER}} symbols in AI prompts
+  and automation scripts. The vault resolves them at execution time — nothing
+  leaves your device.
+
+  Features:
+  * AES-256-GCM + Argon2id encryption
+  * {{PLACEHOLDER}} reference system for AI agent tool calls
+  * Integrates with LangChain, CrewAI, AutoGen, n8n, and 40+ frameworks
+  * Domain-binding security model
+  * 100% local — no telemetry, no accounts, no cloud
+
+RepoType: git
+Repo: https://github.com/enigmagent/enigmagent
+
+Builds:
+  - versionName: '1.0.0'
+    versionCode: 1
+    commit: v1.0.0
+    subdir: platforms/mobile/android
+    gradle:
+      - yes
+    build: npm install && npm run build:android
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+CurrentVersion: '1.0.0'
+CurrentVersionCode: 1

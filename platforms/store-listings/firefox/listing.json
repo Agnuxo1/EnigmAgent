@@ -1,0 +1,14 @@
+{
+  "_comment": "Firefox Add-ons (AMO) listing metadata — https://addons.mozilla.org/developers/",
+  "name": "EnigmAgent — Local AI Secret Vault",
+  "summary": "Secure local vault for AI agents: resolve API keys as {{PLACEHOLDER}} references. Zero cloud exposure.",
+  "description": "EnigmAgent is a local-first secret vault for AI agent developers and power users.\n\nFeatures:\n• AES-256-GCM encrypted local vault — no cloud, no telemetry\n• {{PLACEHOLDER}} reference system for AI agent tool calls\n• Integrates with LangChain, CrewAI, AutoGen, n8n, and 40+ frameworks\n• Domain binding security: each secret only accessible from its registered origin\n• Full offline operation — nothing leaves your machine\n\nThis extension connects to the EnigmAgent local server (127.0.0.1:3737) to resolve placeholder references in AI prompts and browser automation.\n\nDocumentation: https://docs.enigmagent.com\nSource: https://github.com/enigmagent/enigmagent",
+  "categories": ["privacy-security", "productivity"],
+  "tags": ["ai", "agents", "vault", "secrets", "security", "credentials", "placeholder"],
+  "support_url": "https://github.com/enigmagent/enigmagent/issues",
+  "homepage": "https://enigmagent.com",
+  "license": "MIT",
+  "experimental": false,
+  "requires_payment": false,
+  "amo_slug": "enigmagent-vault"
+}

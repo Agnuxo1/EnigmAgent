@@ -1,0 +1,18 @@
+{
+  "_comment": "Open VSX Registry listing — https://open-vsx.org/ (submit existing .vsix from VSCode marketplace)",
+  "publisher": "enigmagent",
+  "name": "enigmagent-vault",
+  "displayName": "EnigmAgent Vault",
+  "description": "Secure local vault for AI agent credentials. Reference secrets as {{PLACEHOLDER}} in AI prompts, HTTP files, and run configurations.",
+  "version": "1.0.0",
+  "license": "MIT",
+  "homepage": "https://enigmagent.com",
+  "repository": "https://github.com/enigmagent/enigmagent",
+  "bugs": "https://github.com/enigmagent/enigmagent/issues",
+  "categories": ["Other", "Programming Languages"],
+  "tags": ["ai", "agents", "vault", "secrets", "security", "credentials", "langchain", "crewai"],
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "_submission_note": "This is the same VSIX published to the VS Code Marketplace. Submit via: ovsx publish enigmagent-vault-1.0.0.vsix --pat <OPEN_VSX_TOKEN>"
+}

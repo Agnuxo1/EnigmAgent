@@ -1,0 +1,37 @@
+name: 'EnigmAgent Vault Resolve'
+description: 'Resolve {{PLACEHOLDER}} references from a local EnigmAgent vault in your GitHub Actions workflows'
+author: 'EnigmAgent'
+branding:
+  icon: 'lock'
+  color: 'purple'
+
+inputs:
+  text:
+    description: 'Text or file path containing {{PLACEHOLDER}} references to resolve'
+    required: true
+  vault-host:
+    description: 'EnigmAgent vault server host'
+    required: false
+    default: '127.0.0.1'
+  vault-port:
+    description: 'EnigmAgent vault server port'
+    required: false
+    default: '3737'
+  origin:
+    description: 'Origin for domain binding'
+    required: false
+    default: 'http://localhost'
+  output-var:
+    description: 'Name of the output environment variable to set with the resolved text'
+    required: false
+    default: 'ENIGMAGENT_RESOLVED'
+
+outputs:
+  resolved:
+    description: 'The text with all {{PLACEHOLDER}} references resolved'
+  replaced-count:
+    description: 'Number of placeholders replaced'
+
+runs:
+  using: 'node20'
+  main: 'dist/index.js'

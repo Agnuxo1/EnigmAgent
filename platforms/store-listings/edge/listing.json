@@ -1,0 +1,14 @@
+{
+  "_comment": "Microsoft Edge Add-ons (Partner Center) listing metadata — https://partner.microsoft.com/dashboard/microsoftedge/",
+  "name": "EnigmAgent — Local AI Secret Vault",
+  "short_description": "Secure local vault for AI agents: store API keys encrypted, reference them as {{PLACEHOLDER}}. Zero cloud exposure.",
+  "description": "EnigmAgent is a local-first secret vault designed for AI agent developers and power users.\n\nInstead of hardcoding API keys and passwords in prompts or scripts, store them in an AES-256-GCM encrypted local vault and reference them as {{PLACEHOLDER}} symbols. The vault resolves them automatically at execution time.\n\nFeatures:\n• Local AES-256-GCM vault — no cloud, no telemetry\n• {{PLACEHOLDER}} resolution for AI agent tool calls\n• Integrates with 40+ AI frameworks (LangChain, CrewAI, AutoGen, n8n, etc.)\n• Domain-binding security model\n• Works with Windows, macOS, and Linux\n\nSecurity: All encryption and secret access happens locally. No data leaves your machine.",
+  "category": "Productivity",
+  "language": "en-US",
+  "version": "1.0.0",
+  "website_url": "https://enigmagent.com",
+  "support_url": "https://github.com/enigmagent/enigmagent/issues",
+  "privacy_policy_url": "https://enigmagent.com/privacy",
+  "age_rating": "Everyone",
+  "manifest_version": 3
+}

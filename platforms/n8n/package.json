@@ -1,0 +1,54 @@
+{
+  "name": "n8n-nodes-enigmagent",
+  "version": "1.0.0",
+  "description": "n8n community node for EnigmAgent — secure local vault integration. Check vault status, list secrets, and resolve {{PLACEHOLDER}} references in your n8n workflows.",
+  "keywords": [
+    "n8n-community-node-package",
+    "n8n",
+    "enigmagent",
+    "vault",
+    "secrets",
+    "security",
+    "credentials",
+    "placeholder"
+  ],
+  "license": "MIT",
+  "homepage": "https://enigmagent.com",
+  "author": {
+    "name": "EnigmAgent",
+    "email": "dev@enigmagent.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/enigmagent/enigmagent.git",
+    "directory": "platforms/n8n"
+  },
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc --project tsconfig.json && npm run copy-icons",
+    "copy-icons": "copyfiles -u 1 nodes/**/*.svg dist/",
+    "dev": "tsc --project tsconfig.json --watch",
+    "lint": "eslint nodes --ext .ts",
+    "prepublishOnly": "npm run build"
+  },
+  "files": [
+    "dist/**/*"
+  ],
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "credentials": [],
+    "nodes": [
+      "dist/nodes/EnigmAgent/EnigmAgent.node.js"
+    ]
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "copyfiles": "^2.4.1",
+    "eslint": "^8.0.0",
+    "n8n-workflow": "*",
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "n8n-workflow": "*"
+  }
+}

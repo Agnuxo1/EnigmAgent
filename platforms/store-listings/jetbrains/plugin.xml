@@ -1,0 +1,79 @@
+<!-- JetBrains Plugin Repository listing metadata -->
+<!-- https://plugins.jetbrains.com/plugin/add -->
+<idea-plugin>
+  <id>com.enigmagent.vault</id>
+  <name>EnigmAgent Vault</name>
+  <version>1.0.0</version>
+  <vendor email="dev@enigmagent.com" url="https://enigmagent.com">EnigmAgent</vendor>
+
+  <description><![CDATA[
+    <h2>EnigmAgent Vault — Secure AI Agent Credential Manager</h2>
+
+    <p>
+      Store API keys, tokens, and passwords in a local AES-256-GCM encrypted vault.
+      Reference them as <code>{{PLACEHOLDER}}</code> symbols in AI prompts, HTTP clients,
+      and run configurations — the vault resolves them automatically at execution time.
+    </p>
+
+    <h3>Features</h3>
+    <ul>
+      <li>🔒 Local AES-256-GCM vault — no cloud, no telemetry</li>
+      <li>🤖 {{PLACEHOLDER}} resolution for AI agent tool calls</li>
+      <li>🔗 Integrates with LangChain, CrewAI, AutoGen, n8n, and 40+ frameworks</li>
+      <li>🛡 Domain-binding: each secret is bound to a specific origin</li>
+      <li>⚡ Works in HTTP client, run configurations, and terminal</li>
+    </ul>
+
+    <h3>Quick Start</h3>
+    <ol>
+      <li>Install EnigmAgent MCP: <code>npm install -g enigmagent-mcp</code></li>
+      <li>Start the vault server: <code>enigmagent-mcp --mode rest --port 3737</code></li>
+      <li>Add a secret via the tool window or CLI</li>
+      <li>Reference it as <code>{{SECRET_NAME}}</code> in any HTTP request or run config</li>
+    </ol>
+
+    <p>
+      <a href="https://docs.enigmagent.com">Documentation</a> |
+      <a href="https://github.com/enigmagent/enigmagent/issues">Support</a>
+    </p>
+  ]]></description>
+
+  <change-notes><![CDATA[
+    <ul>
+      <li>1.0.0: Initial release — vault integration for JetBrains IDEs</li>
+    </ul>
+  ]]></change-notes>
+
+  <idea-version since-build="232" until-build="999.*"/>
+
+  <depends>com.intellij.modules.platform</depends>
+  <depends optional="true" config-file="enigmagent-http.xml">com.intellij.httpClient</depends>
+
+  <extensions defaultExtensionNs="com.intellij">
+    <toolWindow
+      id="EnigmAgent"
+      displayName="EnigmAgent"
+      anchor="right"
+      icon="/icons/enigmagent.svg"
+      factoryClass="com.enigmagent.vault.ui.EnigmAgentToolWindowFactory"/>
+
+    <notificationGroup
+      id="EnigmAgent"
+      displayType="BALLOON"
+      isLogByDefault="false"/>
+  </extensions>
+
+  <actions>
+    <group id="EnigmAgent.Menu" text="EnigmAgent" popup="true">
+      <add-to-group group-id="ToolsMenu" anchor="last"/>
+      <action id="EnigmAgent.VaultStatus"
+              class="com.enigmagent.vault.actions.VaultStatusAction"
+              text="Check Vault Status"
+              description="Check if EnigmAgent vault is running and unlocked"/>
+      <action id="EnigmAgent.ListSecrets"
+              class="com.enigmagent.vault.actions.ListSecretsAction"
+              text="List Secrets"
+              description="List all available secrets (names only)"/>
+    </group>
+  </actions>
+</idea-plugin>

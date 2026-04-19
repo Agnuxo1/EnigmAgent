@@ -2,6 +2,8 @@
 
 Every format lives in its own subdirectory. The original browser extension stays untouched in `extension/`.
 
+## Core platforms
+
 | Directory | Platform | Status | Effort |
 |---|---|---|---|
 | [`firefox-ext/`](firefox-ext/) | Firefox + Edge + Opera | ✅ Ready | Low |
@@ -17,6 +19,48 @@ Every format lives in its own subdirectory. The original browser extension stays
 | [`pinokio/`](pinokio/) | Pinokio launcher | ✅ Ready | Very low |
 | [`safari-extension/`](safari-extension/) | Safari (macOS + iOS App Store) | ✅ Ready | Medium |
 | [`shared/`](shared/) | Shared Node.js vault core | Internal | — |
+
+## AI Framework integrations
+
+| Directory | Platform | Type | Status |
+|---|---|---|---|
+| [`python-sdk/`](python-sdk/) | Python SDK (PyPI: `enigmagent`) | Python package | ✅ Ready |
+| [`python-sdk/enigmagent/tools/langchain.py`](python-sdk/enigmagent/tools/langchain.py) | LangChain | Python tool | ✅ Ready |
+| [`python-sdk/enigmagent/tools/langgraph.py`](python-sdk/enigmagent/tools/langgraph.py) | LangGraph | Python tool | ✅ Ready |
+| [`python-sdk/enigmagent/tools/crewai.py`](python-sdk/enigmagent/tools/crewai.py) | CrewAI | Python tool | ✅ Ready |
+| [`python-sdk/enigmagent/tools/autogen.py`](python-sdk/enigmagent/tools/autogen.py) | AutoGen | Python tool | ✅ Ready |
+| [`python-sdk/enigmagent/tools/llamaindex.py`](python-sdk/enigmagent/tools/llamaindex.py) | LlamaIndex | Python tool | ✅ Ready |
+| [`python-sdk/enigmagent/tools/haystack.py`](python-sdk/enigmagent/tools/haystack.py) | Haystack | Python component | ✅ Ready |
+| [`python-sdk/enigmagent/tools/semantic_kernel.py`](python-sdk/enigmagent/tools/semantic_kernel.py) | Semantic Kernel | Python plugin | ✅ Ready |
+| [`python-sdk/enigmagent/tools/smolagents.py`](python-sdk/enigmagent/tools/smolagents.py) | SmolAgents | Python tool | ✅ Ready |
+| [`python-sdk/enigmagent/tools/phidata.py`](python-sdk/enigmagent/tools/phidata.py) | Phidata / Agno | Python toolkit | ✅ Ready |
+| [`python-sdk/enigmagent/tools/mem0.py`](python-sdk/enigmagent/tools/mem0.py) | Mem0 | Python memory | ✅ Ready |
+| [`python-sdk/enigmagent/tools/openai_agents.py`](python-sdk/enigmagent/tools/openai_agents.py) | OpenAI Agents SDK | Python tool | ✅ Ready |
+| [`python-sdk/enigmagent/tools/anthropic_sdk.py`](python-sdk/enigmagent/tools/anthropic_sdk.py) | Anthropic SDK | Python tool | ✅ Ready |
+| [`openclaw/`](openclaw/) | OpenClaw | TypeScript middleware | ✅ Ready |
+| [`hermes-agent/`](hermes-agent/) | Hermes Agent | Python plugin | ✅ Ready |
+| [`paperclip/`](paperclip/) | Paperclip | TypeScript plugin | ✅ Ready |
+| [`n8n/`](n8n/) | n8n community node | TypeScript INodeType | ✅ Ready |
+| [`nanoclaw/`](nanoclaw/) | NanoClaw channel | TypeScript channel | ✅ Ready |
+| [`clawhub/`](clawhub/) | ClawHub skill | TypeScript skill | ✅ Ready |
+
+## Store listings & publication guides
+
+| Directory | Platform | Status |
+|---|---|---|
+| [`store-listings/chrome/`](store-listings/chrome/) | Chrome / Brave / Vivaldi / Kiwi Web Store | ✅ Ready |
+| [`store-listings/edge/`](store-listings/edge/) | Microsoft Edge Add-ons | ✅ Ready |
+| [`store-listings/firefox/`](store-listings/firefox/) | Firefox AMO | ✅ Ready |
+| [`store-listings/opera/`](store-listings/opera/) | Opera Add-ons | ✅ Ready |
+| [`store-listings/jetbrains/`](store-listings/jetbrains/) | JetBrains Marketplace | ✅ Ready |
+| [`store-listings/openvsx/`](store-listings/openvsx/) | Open VSX Registry | ✅ Ready |
+| [`store-listings/pwa/`](store-listings/pwa/) | PWABuilder / Google Play / Apple / Microsoft Store | ✅ Ready |
+| [`store-listings/f-droid/`](store-listings/f-droid/) | F-Droid | ✅ Ready |
+| [`store-listings/npm/`](store-listings/npm/) | npm / npmjs.com | ✅ Ready |
+| [`store-listings/pypi/`](store-listings/pypi/) | PyPI | ✅ Ready |
+| [`store-listings/github-marketplace/`](store-listings/github-marketplace/) | GitHub Marketplace (Action) | ✅ Ready |
+| [`store-listings/product-hunt/`](store-listings/product-hunt/) | Product Hunt launch kit | ✅ Ready |
+| [`store-listings/alternative-to/`](store-listings/alternative-to/) | AlternativeTo listing | ✅ Ready |
 
 ## Quick start
 

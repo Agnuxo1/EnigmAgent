@@ -1,0 +1,48 @@
+{
+  "_comment": "PWA manifest additions for Google Play (TWA), Apple App Store, and Microsoft Store PWA submissions. Merge with the base manifest.json in the pwa/ platform.",
+  "name": "EnigmAgent — AI Secret Vault",
+  "short_name": "EnigmAgent",
+  "description": "Local-first AI agent credential vault. Store API keys encrypted, reference as {{PLACEHOLDER}}.",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#6c47ff",
+  "background_color": "#1a1a2e",
+  "categories": ["productivity", "security", "utilities"],
+  "lang": "en",
+  "dir": "ltr",
+  "screenshots": [
+    {
+      "src": "/screenshots/vault-dashboard-1280x800.png",
+      "sizes": "1280x800",
+      "type": "image/png",
+      "platform": "wide",
+      "label": "Vault dashboard showing stored secrets"
+    },
+    {
+      "src": "/screenshots/placeholder-resolve-1280x800.png",
+      "sizes": "1280x800",
+      "type": "image/png",
+      "platform": "wide",
+      "label": "{{PLACEHOLDER}} resolution in action"
+    },
+    {
+      "src": "/screenshots/mobile-vault-390x844.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "platform": "narrow",
+      "label": "Mobile vault view"
+    }
+  ],
+  "related_applications": [
+    {
+      "platform": "play",
+      "url": "https://play.google.com/store/apps/details?id=com.enigmagent.vault",
+      "id": "com.enigmagent.vault"
+    },
+    {
+      "platform": "itunes",
+      "url": "https://apps.apple.com/app/enigmagent/id0000000000"
+    }
+  ],
+  "prefer_related_applications": false
+}

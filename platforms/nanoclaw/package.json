@@ -1,0 +1,45 @@
+{
+  "name": "nanoclaw-channel-enigmagent",
+  "version": "1.0.0",
+  "description": "EnigmAgent vault channel for NanoClaw — secure local secret management for NanoClaw agent workflows.",
+  "keywords": [
+    "nanoclaw",
+    "nanoclaw-channel",
+    "enigmagent",
+    "vault",
+    "secrets",
+    "security",
+    "ai-agents"
+  ],
+  "license": "MIT",
+  "author": "EnigmAgent <dev@enigmagent.com>",
+  "homepage": "https://enigmagent.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/enigmagent/enigmagent.git",
+    "directory": "platforms/nanoclaw"
+  },
+  "main": "dist/src/registry.js",
+  "types": "dist/src/registry.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/src/registry.js",
+      "require": "./dist/src/registry.js",
+      "types": "./dist/src/registry.d.ts"
+    },
+    "./channel": {
+      "import": "./dist/src/channels/enigmagent.js",
+      "require": "./dist/src/channels/enigmagent.js",
+      "types": "./dist/src/channels/enigmagent.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^18.0.0"
+  }
+}

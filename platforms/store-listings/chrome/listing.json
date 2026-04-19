@@ -1,0 +1,27 @@
+{
+  "_comment": "Chrome Web Store listing metadata — submit via https://chrome.google.com/webstore/developer/dashboard",
+  "name": "EnigmAgent — Local AI Secret Vault",
+  "summary": "Secure local vault for AI agents: resolve API keys as {{PLACEHOLDER}} references. Zero cloud exposure.",
+  "description": "EnigmAgent is a local-first secret vault for AI agents, developers, and power users.\n\nInstead of hardcoding API keys and passwords in prompts, scripts, or browser automation — store them encrypted on your machine and reference them as {{PLACEHOLDER}} symbols. EnigmAgent resolves them at the moment they are needed, using AES-256-GCM encryption.\n\n✅ WHAT IT DOES\n• Stores API keys, tokens, passwords, and private documents in a local AES-256-GCM encrypted vault\n• Resolves {{PLACEHOLDER}} references in AI agent tool calls, browser automation, and scripts\n• Integrates with LangChain, CrewAI, AutoGen, LlamaIndex, n8n, and 40+ AI frameworks\n• Works offline — no cloud sync, no telemetry, no data leaves your machine\n\n🔒 SECURITY MODEL\n• AES-256-GCM encryption with Argon2id key derivation\n• Domain binding: each secret is bound to a specific origin\n• All vault operations happen locally on 127.0.0.1\n\n🚀 QUICK START\n1. Install the EnigmAgent MCP server: npm install -g enigmagent-mcp\n2. Start the vault: enigmagent-mcp --mode rest --port 3737\n3. Add a secret: enigmagent add GITHUB_TOKEN @localhost ghp_...\n4. Use in any AI agent: {{GITHUB_TOKEN}}\n\nFor documentation and integrations: https://enigmagent.com",
+  "category": "Productivity",
+  "language": "en",
+  "version": "1.0.0",
+  "homepage_url": "https://enigmagent.com",
+  "support_url": "https://github.com/enigmagent/enigmagent/issues",
+  "privacy_policy_url": "https://enigmagent.com/privacy",
+  "screenshots": [
+    "screenshots/vault-unlock.png",
+    "screenshots/secret-list.png",
+    "screenshots/placeholder-resolve.png"
+  ],
+  "icons": {
+    "128": "icons/icon128.png"
+  },
+  "permissions_justification": {
+    "storage": "Store vault unlock state and user preferences locally",
+    "nativeMessaging": "Communicate with the local EnigmAgent MCP server for secret resolution",
+    "activeTab": "Resolve placeholders in the current page context"
+  },
+  "single_purpose": "Securely store and resolve credential placeholders for AI agents and browser automation",
+  "manifest_version": 3
+}

@@ -1,0 +1,9 @@
+{
+  "_comment": "Opera addons listing metadata — https://addons.opera.com/developer/",
+  "name": "EnigmAgent — Local AI Secret Vault",
+  "summary": "Secure local vault for AI agents. Store API keys encrypted, use {{PLACEHOLDER}} references. Zero cloud.",
+  "description": "EnigmAgent is a privacy-first credential vault for AI developers.\n\nStore your API keys, tokens, and passwords in a local AES-256-GCM encrypted vault. Reference them as {{PLACEHOLDER}} in AI prompts and automation scripts — the vault resolves them automatically.\n\nKey features:\n• 100% local — no cloud sync, no accounts required\n• AES-256-GCM + Argon2id encryption\n• Integrates with 40+ AI frameworks\n• Works with LangChain, CrewAI, n8n, AutoGen, and more\n• Domain-bound access control\n\nhttps://enigmagent.com",
+  "categories": ["security", "productivity"],
+  "version": "1.0.0",
+  "homepage": "https://enigmagent.com"
+}

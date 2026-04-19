@@ -1,0 +1,52 @@
+{
+  "name": "clawhub-skill-enigmagent",
+  "version": "1.0.0",
+  "description": "EnigmAgent vault skill for ClawHub — secure local secret management for AI agents.",
+  "keywords": [
+    "clawhub",
+    "clawhub-skill",
+    "enigmagent",
+    "vault",
+    "secrets",
+    "security",
+    "credentials",
+    "ai-agents",
+    "placeholder"
+  ],
+  "license": "MIT",
+  "author": "EnigmAgent <dev@enigmagent.com>",
+  "homepage": "https://enigmagent.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/enigmagent/enigmagent.git",
+    "directory": "platforms/clawhub"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "clawhub": {
+    "type": "skill",
+    "name": "enigmagent-vault",
+    "version": "1.0.0",
+    "skillFile": "SKILL.md",
+    "tools": [
+      "enigmagent_vault_status",
+      "enigmagent_vault_list",
+      "enigmagent_resolve",
+      "enigmagent_resolve_text"
+    ],
+    "config": {
+      "enigmagent.host": "127.0.0.1",
+      "enigmagent.port": 3737,
+      "enigmagent.origin": "http://localhost"
+    }
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^18.0.0"
+  }
+}
