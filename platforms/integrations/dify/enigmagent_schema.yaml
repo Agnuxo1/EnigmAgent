@@ -1,0 +1,82 @@
+openapi: 3.1.0
+info:
+  title: EnigmAgent Vault API
+  description: >
+    Local AES-256-GCM encrypted secret vault.
+    Retrieves secret values for AI agents at runtime — LLMs never see plaintext values.
+  version: 0.2.0
+servers:
+  - url: http://127.0.0.1:39517
+    description: Local EnigmAgent vault instance
+
+paths:
+  /secret/{name}:
+    get:
+      operationId: getSecret
+      summary: Retrieve a secret value by name
+      description: Returns the plaintext value for the named secret from the encrypted vault.
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The secret name (e.g. OPENAI_KEY, GITHUB_TOKEN)
+      responses:
+        "200":
+          description: Secret found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  value:
+                    type: string
+                  domain:
+                    type: string
+        "404":
+          description: Secret not found
+        "401":
+          description: Unauthorized
+
+  /secrets:
+    get:
+      operationId: listSecrets
+      summary: List all stored secret names
+      description: Returns names and domain bindings — never the values.
+      responses:
+        "200":
+          description: List of secrets
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  secrets:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        domain:
+                          type: string
+
+  /health:
+    get:
+      operationId: healthCheck
+      summary: Vault health check
+      responses:
+        "200":
+          description: Vault status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  count:
+                    type: integer

@@ -240,9 +240,118 @@ const commands = {
     console.log(`✓ Vault imported to ${VAULT_PATH}`);
   },
 
+  /**
+   * enigmagent run [--env VAR=SECRET ...] -- <command> [args...]
+   *
+   * Unlock the vault, inject secrets as environment variables,
+   * then run any command. Secrets are available as $SECRET_NAME.
+   *
+   * Examples:
+   *   enigmagent run -- twine upload dist/*
+   *     → injects ALL vault secrets as env vars (PYPI_TOKEN=xxx, etc.)
+   *
+   *   enigmagent run --env TWINE_PASSWORD=PYPI_TOKEN -- twine upload -u __token__ dist/*
+   *     → maps PYPI_TOKEN → TWINE_PASSWORD specifically
+   *
+   *   enigmagent run -- npm publish
+   *     → injects NPM_TOKEN etc. from vault
+   *
+   * {{PLACEHOLDER}} patterns in command args are also resolved inline.
+   */
+  async run() {
+    const sepIdx = args.indexOf('--');
+    if (sepIdx === -1 || sepIdx >= args.length - 1) {
+      console.error([
+        'Usage:',
+        '  enigmagent run -- <command> [args...]',
+        '  enigmagent run --env VAR=SECRET [--env VAR2=SECRET2] -- <command> [args...]',
+        '',
+        'Examples:',
+        '  enigmagent run -- twine upload dist/*',
+        '  enigmagent run --env TWINE_PASSWORD=PYPI_TOKEN -- twine upload -u __token__ dist/*',
+        '  enigmagent run -- npm publish',
+      ].join('\n'));
+      process.exit(1);
+    }
+
+    // Parse --env VAR=SECRET mappings (between "run" and "--")
+    const envMappings = [];
+    for (let i = 1; i < sepIdx; i++) {
+      if (args[i] === '--env' && args[i + 1]) {
+        const eqIdx = args[i + 1].indexOf('=');
+        if (eqIdx === -1) { console.error(`--env requires VAR=SECRET format, got: ${args[i+1]}`); process.exit(1); }
+        envMappings.push({
+          varName:    args[i + 1].slice(0, eqIdx),
+          secretName: args[i + 1].slice(eqIdx + 1),
+        });
+        i++;
+      }
+    }
+
+    const cmdArgs = args.slice(sepIdx + 1);
+
+    // Unlock vault
+    const vault = new VaultManager(new FileStorage(VAULT_PATH));
+    const { username, password } = await getCredentials();
+    process.stderr.write('Unlocking vault…\n');
+    await vault.unlock(username, password);
+
+    // Build env: current process env + vault secrets
+    const env = { ...process.env };
+
+    if (envMappings.length > 0) {
+      // Explicit mappings only
+      for (const { varName, secretName } of envMappings) {
+        const entry = vault.findByName(secretName);
+        if (!entry) {
+          console.error(`Secret "${secretName}" not found in vault.`);
+          vault.lock(); process.exit(1);
+        }
+        env[varName] = await vault.revealSecret(entry.id);
+        process.stderr.write(`  → ${varName} = ${secretName} ✓\n`);
+      }
+    } else {
+      // Inject ALL secrets by their vault name
+      const entries = vault.list();
+      for (const e of entries) {
+        env[e.name] = await vault.revealSecret(e.id);
+        process.stderr.write(`  → ${e.name} injected ✓\n`);
+      }
+    }
+
+    // Resolve {{PLACEHOLDER}} tokens in command args
+    const resolvedArgs = [];
+    for (const arg of cmdArgs) {
+      let resolved = arg;
+      PLACEHOLDER_RE.lastIndex = 0;
+      for (const m of [...arg.matchAll(PLACEHOLDER_RE)]) {
+        const entry = vault.findByName(m[1]);
+        if (entry) {
+          resolved = resolved.split(m[0]).join(await vault.revealSecret(entry.id));
+        }
+      }
+      PLACEHOLDER_RE.lastIndex = 0;
+      resolvedArgs.push(resolved);
+    }
+
+    vault.lock();
+
+    // Spawn subprocess with injected env
+    const { spawn } = await import('node:child_process');
+    const [exe, ...exeArgs] = resolvedArgs;
+    process.stderr.write(`\nRunning: ${exe} ${exeArgs.join(' ')}\n\n`);
+
+    const child = spawn(exe, exeArgs, { env, stdio: 'inherit', shell: true });
+    child.on('close', (code) => process.exit(code ?? 0));
+    child.on('error', (err) => {
+      console.error(`Failed to start: ${err.message}`);
+      process.exit(1);
+    });
+  },
+
   help() {
     console.log(`
-EnigmAgent CLI v0.2.0
+EnigmAgent CLI v0.3.0
 Usage: enigmagent <command> [options]
 
 Commands:
@@ -257,6 +366,11 @@ Commands:
   domain NAME @dom    Change domain binding
   export              Export vault to JSON file
   import <file>       Import vault from JSON file
+
+  run -- <cmd>        Run any command with vault secrets injected as env vars
+                      enigmagent run -- twine upload dist/*
+                      enigmagent run --env TWINE_PASSWORD=PYPI_TOKEN -- twine upload -u __token__ dist/*
+                      enigmagent run -- npm publish
 
 Options:
   --vault, -v <path>    Vault file path (default: ~/.enigmagent/vault.json)

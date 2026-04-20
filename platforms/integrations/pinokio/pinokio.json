@@ -1,0 +1,10 @@
+{
+  "title": "EnigmAgent",
+  "description": "Encrypted local vault for AI agents. Resolves {{PLACEHOLDER}} secrets at runtime — your LLM never sees the real values.",
+  "icon": "https://raw.githubusercontent.com/agnuxo1/EnigmAgent/main/extension/icons/icon-128.png",
+  "homepage": "https://enigmagent.pages.dev",
+  "repository": "https://github.com/agnuxo1/EnigmAgent",
+  "tags": ["security", "vault", "credentials", "ai-tools", "local-ai"],
+  "version": "0.2.0",
+  "main": "pinokio.js"
+}

@@ -1,0 +1,29 @@
+# LibreChat configuration snippet for EnigmAgent
+# Merge this into your librechat.yaml under the `tools:` section.
+#
+# Prerequisites:
+#   - enigmagent serve --port 39517 must be running
+#   - Place enigmagent.js in api/app/clients/tools/structured/
+
+tools:
+  - name: enigmagent_get_secret
+    description: >
+      Retrieve a secret value from the local EnigmAgent AES-256-GCM encrypted vault.
+      Use this to get API keys, tokens, or passwords stored in the vault.
+    module: EnigmAgentGetSecret
+    file: ./api/app/clients/tools/structured/enigmagent.js
+    environment:
+      ENIGMAGENT_URL: "http://127.0.0.1:39517"
+      ENIGMAGENT_TOKEN: ""   # leave empty for localhost
+    enabled: true
+    for_agents: true
+
+  - name: enigmagent_list_secrets
+    description: >
+      List all secret names in the local EnigmAgent vault (names only, values never exposed).
+    module: EnigmAgentListSecrets
+    file: ./api/app/clients/tools/structured/enigmagent.js
+    environment:
+      ENIGMAGENT_URL: "http://127.0.0.1:39517"
+    enabled: true
+    for_agents: true

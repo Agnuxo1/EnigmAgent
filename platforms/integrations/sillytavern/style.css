@@ -1,0 +1,27 @@
+#enigmagent-settings .inline-drawer-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+#enigmagent-settings .flex-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#enigmagent-settings label {
+  min-width: 80px;
+  font-size: 0.9em;
+}
+
+#enigmagent-settings input[type="text"],
+#enigmagent-settings input[type="password"] {
+  flex: 1;
+}
+
+#enigmagent_status {
+  font-size: 0.85em;
+  font-style: italic;
+}

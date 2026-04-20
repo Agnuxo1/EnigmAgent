@@ -1,0 +1,43 @@
+{
+  "name": "enigmagent-vault",
+  "version": "0.2.0",
+  "displayName": "EnigmAgent Vault",
+  "description": "Resolve {{PLACEHOLDER}} tokens in prompts using the local AES-256-GCM encrypted vault. Your LLM never sees real API keys.",
+  "author": "Francisco Angulo de Lafuente",
+  "authorGithub": "agnuxo1",
+  "license": "MIT",
+  "hubId": "enigmagent-vault",
+  "icon": "https://raw.githubusercontent.com/agnuxo1/EnigmAgent/main/extension/icons/icon-48.png",
+  "tags": ["security", "credentials", "vault", "secrets"],
+  "entrypoint": {
+    "file": "handler.js"
+  },
+  "setup_args": {
+    "ENIGMAGENT_URL": {
+      "type": "string",
+      "required": false,
+      "input": {
+        "label": "Vault URL",
+        "description": "Base URL of the EnigmAgent REST API.",
+        "placeholder": "http://127.0.0.1:39517"
+      },
+      "value": "http://127.0.0.1:39517"
+    },
+    "ENIGMAGENT_TOKEN": {
+      "type": "string",
+      "required": false,
+      "input": {
+        "label": "Vault Token (optional)",
+        "description": "Bearer token for the vault. Leave empty for localhost.",
+        "placeholder": ""
+      },
+      "value": ""
+    }
+  },
+  "examples": [
+    {
+      "prompt": "Get my OpenAI API key",
+      "call": "{\"secretName\": \"OPENAI_KEY\"}"
+    }
+  ]
+}

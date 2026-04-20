@@ -1,0 +1,20 @@
+# Ollama Modelfile example — EnigmAgent integration
+# =====================================================
+# This Modelfile shows how to embed vault-awareness into a custom Ollama model.
+# The model is instructed to request secrets via {{PLACEHOLDER}} syntax.
+#
+# Build: ollama create enigmagent-llama3 -f Modelfile.example
+# Run:   enigmagent run -- ollama run enigmagent-llama3
+
+FROM llama3
+
+SYSTEM """
+You are a secure AI assistant with access to a local encrypted secret vault.
+When you need to use an API key, token, or credential, refer to it as {{SECRET_NAME}}.
+For example: "I'll use {{OPENAI_KEY}} to call the API."
+Never invent or guess credential values — always use the {{PLACEHOLDER}} syntax.
+The EnigmAgent system will resolve these references before execution.
+"""
+
+PARAMETER temperature 0.7
+PARAMETER num_ctx 4096

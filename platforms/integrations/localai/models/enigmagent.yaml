@@ -1,0 +1,25 @@
+# LocalAI model configuration for EnigmAgent-wrapped models
+# Save to: LocalAI/models/enigmagent-llama3.yaml
+#
+# This config wraps the llama3 model with EnigmAgent secret resolution.
+# All {{PLACEHOLDER}} tokens in prompts are resolved before inference.
+
+name: enigmagent-llama3
+parameters:
+  model: llama-3-8b-instruct.Q4_K_M.gguf
+  temperature: 0.7
+  top_p: 0.9
+
+backend: llama-cpp
+
+system_prompt: |
+  You are a secure AI assistant. When you need to use an API key or secret,
+  refer to it as {{SECRET_NAME}}. For example: "I'll use {{OPENAI_KEY}} to
+  call the API." The EnigmAgent vault resolves these references securely —
+  never invent credential values.
+
+# EnigmAgent resolver hook (runs before inference)
+# Requires: enigmagent serve --port 39517
+preprocessing:
+  url: http://127.0.0.1:39517/resolve
+  method: POST

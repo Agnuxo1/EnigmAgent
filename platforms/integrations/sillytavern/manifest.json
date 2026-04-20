@@ -1,0 +1,17 @@
+{
+  "display_name": "EnigmAgent Secret Vault",
+  "name": "enigmagent",
+  "version": "0.2.0",
+  "description": "Resolves {{PLACEHOLDER}} tokens in your prompts using a local AES-256-GCM encrypted vault. Your LLM never sees real API keys.",
+  "author": "Francisco Angulo de Lafuente",
+  "homepage": "https://enigmagent.pages.dev",
+  "repository": "https://github.com/agnuxo1/EnigmAgent",
+  "requires": [],
+  "optional": [],
+  "js": "index.js",
+  "css": "style.css",
+  "tags": ["security", "credentials", "vault"],
+  "compatibility": {
+    "extras": false
+  }
+}

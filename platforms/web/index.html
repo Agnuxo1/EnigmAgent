@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EnigmAgent — Local AI Secret Vault</title>
+  <meta name="description" content="Encrypted local vault for AI agents. Store API keys and credentials as {{PLACEHOLDER}} references. AES-256-GCM, zero cloud, zero telemetry." />
+  <meta property="og:title" content="EnigmAgent — Local AI Secret Vault" />
+  <meta property="og:description" content="Store API keys securely. Reference them as {{PLACEHOLDER}}. Your LLM never sees the real values." />
+  <meta property="og:type" content="website" />
+  <meta name="google-site-verification" content="zpMt9uK-Pz39xKdAZ9OEN5mGnz9pJBuMv371Mgn_D1o" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:    #0f0f1e;
+      --panel: #16162d;
+      --border:#2a2a50;
+      --teal:  #00d4aa;
+      --teal2: #00896e;
+      --green: #6abf69;
+      --white: #f0f0fa;
+      --gray:  #8282a0;
+      --dark:  #282850;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--white); line-height: 1.6; }
+
+    /* icons */
+    .ico { display: inline-block; vertical-align: middle; flex-shrink: 0; }
+    .ico-lg { width: 48px; height: 48px; }
+    .ico-md { width: 28px; height: 28px; }
+    .ico-sm { width: 18px; height: 18px; }
+
+    /* NAV */
+    nav { position:sticky; top:0; z-index:100; display:flex; align-items:center; justify-content:space-between; padding:0 2rem; height:56px; background:rgba(15,15,30,.92); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); }
+    .nav-logo { display:flex; align-items:center; gap:10px; text-decoration:none; }
+    .nav-logo span { font-size:1.1rem; font-weight:700; color:var(--white); }
+    .nav-links { display:flex; gap:2rem; list-style:none; }
+    .nav-links a { color:var(--gray); text-decoration:none; font-size:.9rem; transition:color .2s; }
+    .nav-links a:hover { color:var(--teal); }
+    .nav-cta { background:var(--teal); color:var(--bg); padding:.4rem 1.1rem; border-radius:6px; text-decoration:none; font-size:.875rem; font-weight:600; transition:opacity .2s; }
+    .nav-cta:hover { opacity:.85; }
+
+    /* HERO */
+    .hero { text-align:center; padding:6rem 2rem 4rem; position:relative; overflow:hidden; }
+    .hero::before { content:""; position:absolute; top:-120px; left:50%; transform:translateX(-50%); width:600px; height:600px; border-radius:50%; background:radial-gradient(circle,rgba(0,212,170,.12) 0%,transparent 70%); pointer-events:none; }
+    .badge { display:inline-block; background:rgba(0,212,170,.1); border:1px solid var(--teal2); color:var(--teal); padding:.3rem .9rem; border-radius:20px; font-size:.8rem; font-weight:600; letter-spacing:.05em; margin-bottom:1.5rem; text-transform:uppercase; }
+    h1 { font-size:clamp(2.2rem,5vw,3.8rem); font-weight:800; line-height:1.15; margin-bottom:1.2rem; }
+    h1 span { color:var(--teal); }
+    .hero-sub { font-size:1.15rem; color:var(--gray); max-width:560px; margin:0 auto 2.5rem; }
+    .hero-btns { display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; }
+    .btn-primary { background:var(--teal); color:var(--bg); padding:.75rem 1.8rem; border-radius:8px; text-decoration:none; font-weight:700; font-size:1rem; transition:opacity .2s; }
+    .btn-primary:hover { opacity:.85; }
+    .btn-secondary { background:transparent; color:var(--white); border:1px solid var(--border); padding:.75rem 1.8rem; border-radius:8px; text-decoration:none; font-size:1rem; transition:border-color .2s; }
+    .btn-secondary:hover { border-color:var(--teal); color:var(--teal); }
+
+    /* TERMINAL */
+    .terminal { max-width:680px; margin:3.5rem auto 0; background:var(--panel); border:1px solid var(--border); border-radius:12px; overflow:hidden; text-align:left; font-family:"Consolas","Courier New",monospace; }
+    .terminal-bar { background:var(--dark); padding:.6rem 1rem; display:flex; align-items:center; gap:.5rem; }
+    .dot { width:12px; height:12px; border-radius:50%; }
+    .dot.r{background:#ff5f57;} .dot.y{background:#ffbd2e;} .dot.g{background:#28c941;}
+    .terminal-bar span { font-size:.8rem; color:var(--gray); margin-left:.5rem; }
+    .terminal-body { padding:1.4rem 1.6rem; font-size:.9rem; line-height:2; }
+    .t-prompt{color:var(--teal);} .t-cmd{color:var(--white);} .t-ok{color:var(--green);} .t-dim{color:var(--gray);}
+    .t-placeholder { color:var(--teal); background:rgba(0,212,170,.1); padding:0 4px; border-radius:3px; }
+
+    /* SECTIONS */
+    section { padding:5rem 2rem; }
+    .container { max-width:1100px; margin:0 auto; }
+    h2 { font-size:clamp(1.8rem,3vw,2.5rem); font-weight:700; margin-bottom:.75rem; }
+    .section-sub { color:var(--gray); font-size:1.05rem; margin-bottom:3rem; }
+
+    /* HOW IT WORKS */
+    .steps { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:1.5rem; }
+    .step { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:1.6rem; }
+    .step-num { width:36px; height:36px; border-radius:50%; background:var(--teal); color:var(--bg); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1rem; margin-bottom:1rem; }
+    .step h3 { font-size:1rem; font-weight:700; margin-bottom:.4rem; }
+    .step p  { font-size:.875rem; color:var(--gray); }
+    .step code { display:block; margin-top:.6rem; background:var(--dark); padding:.4rem .7rem; border-radius:6px; font-size:.8rem; color:var(--teal); font-family:monospace; }
+
+    /* FEATURES */
+    .features-bg { background:var(--panel); border-top:1px solid var(--border); border-bottom:1px solid var(--border); }
+    .features { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:2rem; }
+    .feature { display:flex; gap:1rem; align-items:flex-start; }
+    .feature h3 { font-size:1rem; font-weight:700; margin-bottom:.3rem; }
+    .feature p  { font-size:.875rem; color:var(--gray); }
+
+    /* DETAIL CARDS */
+    .detail-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:1.5rem; margin-top:3.5rem; }
+    .detail-card { text-align:center; padding:1.5rem; background:var(--bg); border-radius:12px; border:1px solid var(--border); }
+    .detail-card h3 { margin:.75rem 0 .5rem; font-size:1rem; }
+    .detail-card p  { color:var(--gray); font-size:.875rem; }
+
+    /* FRAMEWORKS */
+    .fw-grid { display:flex; flex-wrap:wrap; gap:.75rem; }
+    .fw-tag { background:var(--panel); border:1px solid var(--border); padding:.4rem 1rem; border-radius:20px; font-size:.875rem; color:var(--white); transition:border-color .2s,color .2s; }
+    .fw-tag:hover { border-color:var(--teal); color:var(--teal); cursor:default; }
+
+    /* INSTALL */
+    .install-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:1.5rem; }
+    .install-card { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:1.5rem; }
+    .install-card h3 { font-size:.95rem; font-weight:700; margin-bottom:.5rem; color:var(--teal); }
+    .install-card p  { font-size:.85rem; color:var(--gray); margin-bottom:.75rem; }
+    .install-card code { display:block; background:var(--dark); padding:.5rem .8rem; border-radius:6px; font-size:.82rem; color:var(--green); font-family:monospace; word-break:break-all; }
+
+    /* FOOTER */
+    footer { border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--gray); font-size:.875rem; }
+    footer a { color:var(--teal); text-decoration:none; }
+    footer a:hover { text-decoration:underline; }
+    .footer-links { display:flex; gap:2rem; justify-content:center; margin-bottom:1rem; flex-wrap:wrap; }
+
+    @media (max-width:640px) { .nav-links { display:none; } }
+  </style>
+
+  <!-- SVG SYMBOL LIBRARY -->
+  <svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+    <!-- lock -->
+    <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="11" width="18" height="11" rx="2"/>
+      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      <circle cx="12" cy="16" r="1" fill="currentColor"/>
+    </symbol>
+    <!-- shield -->
+    <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7z"/>
+      <polyline points="9,12 11,14 15,10"/>
+    </symbol>
+    <!-- house -->
+    <symbol id="i-house" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/>
+      <polyline points="9,21 9,12 15,12 15,21"/>
+    </symbol>
+    <!-- lightning -->
+    <symbol id="i-bolt" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="13,2 3,14 12,14 11,22 21,10 12,10"/>
+    </symbol>
+    <!-- link / chain -->
+    <symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+    </symbol>
+    <!-- globe -->
+    <symbol id="i-globe" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="2" y1="12" x2="22" y2="12"/>
+      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+    </symbol>
+    <!-- box / package -->
+    <symbol id="i-box" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="21,8 21,21 3,21 3,8"/>
+      <rect x="1" y="3" width="22" height="5"/>
+      <line x1="10" y1="12" x2="14" y2="12"/>
+    </symbol>
+    <!-- chat bubble -->
+    <symbol id="i-chat" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      <line x1="9" y1="10" x2="15" y2="10"/>
+      <line x1="9" y1="13" x2="13" y2="13"/>
+    </symbol>
+    <!-- puzzle -->
+    <symbol id="i-puzzle" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M19.5 12c0-.23-.01-.45-.03-.68l2.86-2.14a.5.5 0 0 0 .12-.63l-2.72-4.72a.5.5 0 0 0-.61-.22l-3.38 1.35a7.26 7.26 0 0 0-1.17-.68L14 1.5a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.49.43l-.5 3.58a7.26 7.26 0 0 0-1.17.68L4.96 4.34a.5.5 0 0 0-.61.22L1.63 9.28a.49.49 0 0 0 .12.63l2.86 2.14c-.02.23-.03.46-.03.68s.01.45.03.68L1.75 15.47a.5.5 0 0 0-.12.63l2.72 4.72a.5.5 0 0 0 .61.22l3.38-1.35c.37.26.76.49 1.17.68l.5 3.58a.5.5 0 0 0 .49.43h3a.5.5 0 0 0 .5-.43l.5-3.58c.41-.19.8-.42 1.17-.68l3.38 1.35a.5.5 0 0 0 .61-.22l2.72-4.72a.49.49 0 0 0-.12-.63l-2.86-2.14c.02-.23.03-.45.03-.68z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </symbol>
+    <!-- heart -->
+    <symbol id="i-heart" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+    </symbol>
+    <!-- person -->
+    <symbol id="i-person" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+      <circle cx="12" cy="7" r="4"/>
+    </symbol>
+    <!-- document / code -->
+    <symbol id="i-doc" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14,2 14,8 20,8"/>
+      <line x1="8" y1="13" x2="16" y2="13"/>
+      <line x1="8" y1="17" x2="12" y2="17"/>
+    </symbol>
+    <!-- chip / AI -->
+    <symbol id="i-chip" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="7" y="7" width="10" height="10" rx="1"/>
+      <line x1="9" y1="7" x2="9" y2="4"/><line x1="12" y1="7" x2="12" y2="4"/><line x1="15" y1="7" x2="15" y2="4"/>
+      <line x1="9" y1="20" x2="9" y2="17"/><line x1="12" y1="20" x2="12" y2="17"/><line x1="15" y1="20" x2="15" y2="17"/>
+      <line x1="7" y1="9" x2="4" y2="9"/><line x1="7" y1="12" x2="4" y2="12"/><line x1="7" y1="15" x2="4" y2="15"/>
+      <line x1="20" y1="9" x2="17" y2="9"/><line x1="20" y1="12" x2="17" y2="12"/><line x1="20" y1="15" x2="17" y2="15"/>
+    </symbol>
+    <!-- cloud -->
+    <symbol id="i-cloud" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
+    </symbol>
+    <!-- warning triangle -->
+    <symbol id="i-warn" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+      <line x1="12" y1="9" x2="12" y2="13"/>
+      <line x1="12" y1="17" x2="12.01" y2="17"/>
+    </symbol>
+    <!-- x circle -->
+    <symbol id="i-xc" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="15" y1="9" x2="9" y2="15"/>
+      <line x1="9" y1="9" x2="15" y2="15"/>
+    </symbol>
+    <!-- check circle -->
+    <symbol id="i-okc" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+      <polyline points="22,4 12,14.01 9,11.01"/>
+    </symbol>
+  </svg>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="#">
+    <svg class="ico" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6abf69" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-lock"/></svg>
+    <span>EnigmAgent</span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#how">How it works</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#install">Install</a></li>
+    <li><a href="#frameworks">Integrations</a></li>
+  </ul>
+  <a class="nav-cta" href="https://github.com/agnuxo1/EnigmAgent">GitHub →</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="badge">Open Source · MIT License</div>
+  <h1>Your AI agents need secrets.<br><span>Keep them secret.</span></h1>
+  <p class="hero-sub">
+    Store API keys in a local AES-256-GCM encrypted vault.
+    Reference them as <strong style="color:var(--teal)">{{PLACEHOLDER}}</strong> symbols.
+    Your LLM never sees the real values.
+  </p>
+  <div class="hero-btns">
+    <a class="btn-primary" href="https://github.com/agnuxo1/EnigmAgent">Get Started Free</a>
+    <a class="btn-secondary" href="#how">See how it works</a>
+  </div>
+  <div class="terminal">
+    <div class="terminal-bar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span>EnigmAgent Vault</span>
+    </div>
+    <div class="terminal-body">
+      <div><span class="t-prompt">&gt; </span><span class="t-cmd">add OPENAI_KEY @openai.com sk-proj-abc123...</span></div>
+      <div><span class="t-ok">&#10003; Stored OPENAI_KEY bound to openai.com</span></div>
+      <div class="t-dim">&nbsp;</div>
+      <div><span class="t-prompt">&gt; </span><span class="t-cmd">add GITHUB_TOKEN @github.com ghp_xyz789...</span></div>
+      <div><span class="t-ok">&#10003; Stored GITHUB_TOKEN bound to github.com</span></div>
+      <div class="t-dim">&nbsp;</div>
+      <div><span class="t-dim"># In your agent code:</span></div>
+      <div><span class="t-cmd">client = OpenAI(api_key=<span class="t-placeholder">"{{OPENAI_KEY}}"</span>)</span></div>
+      <div><span class="t-dim"># &#8594; resolved at runtime, never in plaintext</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how">
+  <div class="container">
+    <h2>How it works</h2>
+    <p class="section-sub">Four steps. No accounts. No cloud. Fully local.</p>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><h3>Store your secret</h3><p>Add any credential to your local encrypted vault via chat or CLI.</p><code>add API_KEY @openai.com sk-...</code></div>
+      <div class="step"><div class="step-num">2</div><h3>Use a placeholder</h3><p>Reference it symbolically in your code, prompts, or configs.</p><code>api_key = "{{API_KEY}}"</code></div>
+      <div class="step"><div class="step-num">3</div><h3>EnigmAgent resolves it</h3><p>At runtime, the vault injects the real value — locally, instantly.</p><code>&#8594; "sk-proj-abc123..."</code></div>
+      <div class="step"><div class="step-num">4</div><h3>LLM stays clean</h3><p>Your AI agent runs with the real credential. No secrets in context windows, logs, or cloud services.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- VISUAL FLOW DIAGRAM -->
+<section style="background:var(--panel);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:5rem 2rem;" id="flow">
+  <div class="container">
+    <h2>The problem EnigmAgent solves</h2>
+    <p class="section-sub">Without EnigmAgent, every credential ends up where it shouldn't be.</p>
+
+    <!-- WITHOUT -->
+    <div style="margin-bottom:3.5rem;">
+      <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1.5rem;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff4444" stroke-width="2.5" stroke-linecap="round"><use href="#i-xc"/></svg>
+        <span style="background:#ff4444;color:#fff;padding:.25rem .8rem;border-radius:20px;font-size:.8rem;font-weight:700;">WITHOUT EnigmAgent</span>
+      </div>
+      <div style="overflow-x:auto;">
+        <svg viewBox="0 0 860 160" width="100%" style="max-width:860px;display:block;margin:0 auto;" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arrowRed" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#ff4444"/></marker>
+          </defs>
+          <!-- You -->
+          <rect x="10" y="30" width="140" height="90" rx="10" fill="#1a1a35" stroke="#2a2a50" stroke-width="1.5"/>
+          <!-- person icon -->
+          <g transform="translate(62,42)" stroke="#6abf69" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="8" cy="5" r="4"/><path d="M0,18 a8,8 0 0,1 16,0"/>
+          </g>
+          <text x="80" y="78" text-anchor="middle" fill="#f0f0fa" font-size="13" font-family="sans-serif" font-weight="700">You</text>
+          <text x="80" y="96" text-anchor="middle" fill="#8282a0" font-size="10" font-family="monospace">sk-proj-abc123</text>
+          <text x="80" y="112" text-anchor="middle" fill="#8282a0" font-size="10" font-family="sans-serif">hardcoded in code</text>
+          <!-- Arrow 1 -->
+          <line x1="150" y1="75" x2="198" y2="75" stroke="#ff4444" stroke-width="2" marker-end="url(#arrowRed)"/>
+          <!-- Code -->
+          <rect x="200" y="30" width="150" height="90" rx="10" fill="#2a1515" stroke="#ff4444" stroke-width="1.5"/>
+          <g transform="translate(258,42)" stroke="#6abf69" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8,0 H2a2,2 0 0,0 -2,2 v14 a2,2 0 0,0 2,2 h12 a2,2 0 0,0 2,-2 V6 z"/><polyline points="8,0 8,6 16,6"/><line x1="4" y1="10" x2="12" y2="10"/><line x1="4" y1="13" x2="9" y2="13"/>
+          </g>
+          <text x="275" y="78" text-anchor="middle" fill="#f0f0fa" font-size="12" font-family="sans-serif" font-weight="700">Prompt / Code</text>
+          <text x="275" y="96" text-anchor="middle" fill="#ff6666" font-size="10" font-family="monospace">api_key="sk-proj-abc"</text>
+          <text x="275" y="111" text-anchor="middle" fill="#ff6666" font-size="10" font-family="sans-serif">key exposed!</text>
+          <!-- Arrow 2 -->
+          <line x1="350" y1="75" x2="398" y2="75" stroke="#ff4444" stroke-width="2" marker-end="url(#arrowRed)"/>
+          <!-- LLM -->
+          <rect x="400" y="30" width="140" height="90" rx="10" fill="#2a1515" stroke="#ff4444" stroke-width="1.5"/>
+          <g transform="translate(454,42)" stroke="#6abf69" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="1" y="3" width="14" height="10" rx="1"/><line x1="4" y1="3" x2="4" y2="1"/><line x1="8" y1="3" x2="8" y2="1"/><line x1="12" y1="3" x2="12" y2="1"/><line x1="4" y1="13" x2="4" y2="15"/><line x1="8" y1="13" x2="8" y2="15"/><line x1="12" y1="13" x2="12" y2="15"/><line x1="1" y1="6" x2="-1" y2="6"/><line x1="1" y1="9" x2="-1" y2="9"/><line x1="15" y1="6" x2="17" y2="6"/><line x1="15" y1="9" x2="17" y2="9"/>
+          </g>
+          <text x="470" y="78" text-anchor="middle" fill="#f0f0fa" font-size="12" font-family="sans-serif" font-weight="700">LLM / AI</text>
+          <text x="470" y="96" text-anchor="middle" fill="#ff6666" font-size="10" font-family="monospace">sees sk-proj-abc</text>
+          <text x="470" y="111" text-anchor="middle" fill="#ff6666" font-size="10" font-family="sans-serif">in context window!</text>
+          <!-- Arrow 3 -->
+          <line x1="540" y1="75" x2="588" y2="75" stroke="#ff4444" stroke-width="2" marker-end="url(#arrowRed)"/>
+          <!-- Cloud -->
+          <rect x="590" y="30" width="255" height="90" rx="10" fill="#2a1515" stroke="#ff4444" stroke-width="1.5"/>
+          <g transform="translate(640,44)" stroke="#6abf69" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16,8 h-1 a7,7 0 1,0 -7,7 h8 a4,4 0 0,0 0,-8 z"/>
+          </g>
+          <text x="717" y="68" text-anchor="middle" fill="#f0f0fa" font-size="12" font-family="sans-serif" font-weight="700">Cloud APIs &amp; Logs</text>
+          <text x="717" y="86" text-anchor="middle" fill="#ff6666" font-size="10" font-family="sans-serif">API calls logged with key</text>
+          <text x="717" y="101" text-anchor="middle" fill="#ff6666" font-size="10" font-family="sans-serif">Git history, crash reports...</text>
+          <!-- warning -->
+          <g transform="translate(693,108)" stroke="#ff4444" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8,1 L1,14 h14 z"/><line x1="8" y1="6" x2="8" y2="9"/><line x1="8" y1="11" x2="8.01" y2="11"/>
+          </g>
+          <text x="717" y="122" text-anchor="middle" fill="#ff4444" font-size="11" font-family="sans-serif" font-weight="700">KEY LEAKED</text>
+        </svg>
+      </div>
+    </div>
+
+    <!-- WITH -->
+    <div>
+      <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1.5rem;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6abf69" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-okc"/></svg>
+        <span style="background:#00896e;color:#fff;padding:.25rem .8rem;border-radius:20px;font-size:.8rem;font-weight:700;">WITH EnigmAgent</span>
+      </div>
+      <div style="overflow-x:auto;">
+        <svg viewBox="0 0 920 200" width="100%" style="max-width:920px;display:block;margin:0 auto;" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arrowTeal" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#00d4aa"/></marker>
+            <marker id="arrowGreen" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#6abf69"/></marker>
+          </defs>
+          <!-- You -->
+          <rect x="10" y="60" width="130" height="80" rx="10" fill="#16162d" stroke="#2a2a50" stroke-width="1.5"/>
+          <g transform="translate(53,70)" stroke="#6abf69" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="8" cy="5" r="4"/><path d="M0,18 a8,8 0 0,1 16,0"/>
+          </g>
+          <text x="75" y="106" text-anchor="middle" fill="#f0f0fa" font-size="12" font-family="sans-serif" font-weight="700">You</text>
+          <text x="75" y="122" text-anchor="middle" fill="#00d4aa" font-size="10" font-family="monospace">add KEY @site.com</text>
+          <text x="75" y="136" text-anchor="middle" fill="#8282a0" font-size="10" font-family="sans-serif">once, that's it</text>
+          <line x1="140" y1="100" x2="188" y2="100" stroke="#00d4aa" stroke-width="2" marker-end="url(#arrowTeal)"/>
+          <!-- Vault -->
+          <rect x="190" y="40" width="160" height="120" rx="10" fill="#0a2820" stroke="#00896e" stroke-width="2"/>
+          <g transform="translate(250,52)" stroke="#6abf69" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="1" y="5" width="14" height="9" rx="2"/><path d="M5,5 V4 a3,3 0 0,1 6,0 v1"/><circle cx="8" cy="9.5" r="1" fill="#6abf69"/>
+          </g>
+          <text x="270" y="84" text-anchor="middle" fill="#00d4aa" font-size="12" font-family="sans-serif" font-weight="700">EnigmAgent Vault</text>
+          <rect x="205" y="92" width="130" height="18" rx="4" fill="#0f3328"/>
+          <text x="270" y="105" text-anchor="middle" fill="#6abf69" font-size="10" font-family="monospace">API_KEY = ••••••••</text>
+          <rect x="205" y="114" width="130" height="18" rx="4" fill="#0f3328"/>
+          <text x="270" y="127" text-anchor="middle" fill="#6abf69" font-size="10" font-family="monospace">GITHUB_TOKEN = ••••</text>
+          <text x="270" y="152" text-anchor="middle" fill="#8282a0" font-size="10" font-family="sans-serif">AES-256-GCM encrypted</text>
+          <line x1="350" y1="100" x2="398" y2="100" stroke="#00d4aa" stroke-width="2" marker-end="url(#arrowTeal)"/>
+          <text x="374" y="88" text-anchor="middle" fill="#8282a0" font-size="9" font-family="sans-serif">resolves</text>
+          <!-- Code -->
+          <rect x="400" y="60" width="155" height="80" rx="10" fill="#16162d" stroke="#2a2a50" stroke-width="1.5"/>
+          <g transform="translate(439,70)" stroke="#6abf69" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8,0 H2a2,2 0 0,0 -2,2 v14 a2,2 0 0,0 2,2 h12 a2,2 0 0,0 2,-2 V6 z"/><polyline points="8,0 8,6 16,6"/><line x1="4" y1="10" x2="12" y2="10"/><line x1="4" y1="13" x2="9" y2="13"/>
+          </g>
+          <text x="477" y="100" text-anchor="middle" fill="#f0f0fa" font-size="12" font-family="sans-serif" font-weight="700">Prompt / Code</text>
+          <text x="477" y="118" text-anchor="middle" fill="#00d4aa" font-size="10" font-family="monospace">{{API_KEY}}</text>
+          <text x="477" y="132" text-anchor="middle" fill="#6abf69" font-size="10" font-family="sans-serif">&#10003; placeholder only</text>
+          <line x1="555" y1="100" x2="603" y2="100" stroke="#6abf69" stroke-width="2" marker-end="url(#arrowGreen)"/>
+          <!-- LLM -->
+          <rect x="605" y="60" width="145" height="80" rx="10" fill="#16162d" stroke="#2a2a50" stroke-width="1.5"/>
+          <g transform="translate(649,70)" stroke="#6abf69" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="1" y="3" width="14" height="10" rx="1"/><line x1="4" y1="3" x2="4" y2="1"/><line x1="8" y1="3" x2="8" y2="1"/><line x1="12" y1="3" x2="12" y2="1"/><line x1="4" y1="13" x2="4" y2="15"/><line x1="8" y1="13" x2="8" y2="15"/><line x1="12" y1="13" x2="12" y2="15"/><line x1="1" y1="6" x2="-1" y2="6"/><line x1="1" y1="9" x2="-1" y2="9"/><line x1="15" y1="6" x2="17" y2="6"/><line x1="15" y1="9" x2="17" y2="9"/>
+          </g>
+          <text x="677" y="100" text-anchor="middle" fill="#f0f0fa" font-size="12" font-family="sans-serif" font-weight="700">LLM / AI</text>
+          <text x="677" y="118" text-anchor="middle" fill="#6abf69" font-size="10" font-family="monospace">sees {{API_KEY}}</text>
+          <text x="677" y="132" text-anchor="middle" fill="#6abf69" font-size="10" font-family="sans-serif">&#10003; no real secret</text>
+          <line x1="750" y1="100" x2="798" y2="100" stroke="#6abf69" stroke-width="2" marker-end="url(#arrowGreen)"/>
+          <!-- Runtime -->
+          <rect x="800" y="60" width="110" height="80" rx="10" fill="#16162d" stroke="#2a2a50" stroke-width="1.5"/>
+          <g transform="translate(826,70)" stroke="#6abf69" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="10,2 3,11 9,11 8,18 17,8 11,8"/>
+          </g>
+          <text x="855" y="100" text-anchor="middle" fill="#f0f0fa" font-size="12" font-family="sans-serif" font-weight="700">Runtime</text>
+          <text x="855" y="116" text-anchor="middle" fill="#6abf69" font-size="10" font-family="sans-serif">&#10003; vault injects</text>
+          <text x="855" y="130" text-anchor="middle" fill="#6abf69" font-size="10" font-family="sans-serif">&#10003; locally only</text>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Detail cards with SVG icons -->
+    <div class="detail-cards">
+      <div class="detail-card">
+        <svg class="ico ico-lg" viewBox="0 0 24 24" fill="none" stroke="#6abf69" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-chat"/></svg>
+        <h3>1. Chat Interface</h3>
+        <p>Open the vault in your browser. Type one line to store any secret. That's it.</p>
+      </div>
+      <div class="detail-card">
+        <svg class="ico ico-lg" viewBox="0 0 24 24" fill="none" stroke="#6abf69" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-lock"/></svg>
+        <h3>2. Encrypted Locally</h3>
+        <p>AES-256-GCM + Argon2id. The vault file on disk is unreadable without your password.</p>
+      </div>
+      <div class="detail-card">
+        <svg class="ico ico-lg" viewBox="0 0 24 24" fill="none" stroke="#6abf69" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-puzzle"/></svg>
+        <h3>3. Use Placeholders</h3>
+        <p>Write <code style="color:var(--teal);background:rgba(0,212,170,.1);padding:1px 5px;border-radius:3px;">{{SECRET_NAME}}</code> anywhere — code, prompts, configs, HTTP requests.</p>
+      </div>
+      <div class="detail-card">
+        <svg class="ico ico-lg" viewBox="0 0 24 24" fill="none" stroke="#6abf69" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-bolt"/></svg>
+        <h3>4. Instant Resolution</h3>
+        <p>EnigmAgent resolves placeholders at runtime. Real values never appear in logs or LLM context.</p>
+      </div>
+      <div class="detail-card">
+        <svg class="ico ico-lg" viewBox="0 0 24 24" fill="none" stroke="#6abf69" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-house"/></svg>
+        <h3>5. Stays Local</h3>
+        <p>Everything runs on 127.0.0.1. No server, no cloud, no account. Your machine only.</p>
+      </div>
+      <div class="detail-card">
+        <svg class="ico ico-lg" viewBox="0 0 24 24" fill="none" stroke="#6abf69" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-shield"/></svg>
+        <h3>6. Domain Binding</h3>
+        <p>Each secret is locked to a domain. <code style="color:var(--teal);background:rgba(0,212,170,.1);padding:1px 5px;border-radius:3px;">OPENAI_KEY</code> only resolves on openai.com.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features-bg" id="features">
+  <div class="container">
+    <h2>Why EnigmAgent</h2>
+    <p class="section-sub">Built for AI developers who take security seriously.</p>
+    <div class="features">
+      <div class="feature">
+        <svg class="ico ico-md" viewBox="0 0 24 24" fill="none" stroke="#6abf69" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-lock"/></svg>
+        <div><h3>AES-256-GCM Encryption</h3><p>Military-grade encryption with Argon2id key derivation. Your vault is unreadable without your password.</p></div>
+      </div>
+      <div class="feature">
+        <svg class="ico ico-md" viewBox="0 0 24 24" fill="none" stroke="#6abf69" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-house"/></svg>
+        <div><h3>100% Local</h3><p>Zero cloud sync. Zero telemetry. Your secrets never leave your machine. Works fully offline.</p></div>
+      </div>
+      <div class="feature">
+        <svg class="ico ico-md" viewBox="0 0 24 24" fill="none" stroke="#6abf69" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-bolt"/></svg>
+        <div><h3>{{PLACEHOLDER}} System</h3><p>Universal reference syntax that works across LangChain, n8n, CrewAI, HTTP clients, and shell scripts.</p></div>
+      </div>
+      <div class="feature">
+        <svg class="ico ico-md" viewBox="0 0 24 24" fill="none" stroke="#6abf69" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-link"/></svg>
+        <div><h3>Domain Binding</h3><p>Each secret is bound to a specific domain. Prevents accidental injection on wrong sites.</p></div>
+      </div>
+      <div class="feature">
+        <svg class="ico ico-md" viewBox="0 0 24 24" fill="none" stroke="#6abf69" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-globe"/></svg>
+        <div><h3>Chrome Extension</h3><p>Vault chat interface lives in your browser. Add secrets with a single line. No setup wizard.</p></div>
+      </div>
+      <div class="feature">
+        <svg class="ico ico-md" viewBox="0 0 24 24" fill="none" stroke="#6abf69" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><use href="#i-box"/></svg>
+        <div><h3>Open Source (MIT)</h3><p>Audit the code. Fork it. Self-host it. No vendor lock-in, no subscription, no account required.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- INSTALL -->
+<section id="install">
+  <div class="container">
+    <h2>Get Started</h2>
+    <p class="section-sub">Multiple ways to run EnigmAgent — pick what fits your workflow.</p>
+    <div class="install-grid">
+      <div class="install-card"><h3>Chrome Extension</h3><p>Install from the Chrome Web Store. Open the vault chat and start adding secrets immediately.</p><code>Chrome Web Store &#8594; search "EnigmAgent"</code></div>
+      <div class="install-card"><h3>Python SDK</h3><p>Use EnigmAgent in any Python AI agent with LangChain, CrewAI, AutoGen, and more.</p><code>pip install enigmagent</code></div>
+      <div class="install-card"><h3>CLI Tool</h3><p>Manage your vault from the terminal. Use <code style="background:none;padding:0;color:var(--teal)">enigmagent run</code> to inject secrets into any command.</p><code>npm install -g enigmagent-cli</code></div>
+      <div class="install-card"><h3>n8n Community Node</h3><p>Resolve {{PLACEHOLDER}} references inside your n8n automation workflows.</p><code>npm install n8n-nodes-enigmagent</code></div>
+      <div class="install-card"><h3>MCP Server</h3><p>Connect Claude, Cursor, or any MCP-compatible AI assistant directly to your vault.</p><code>npm install -g enigmagent-mcp</code></div>
+      <div class="install-card"><h3>Docker</h3><p>Run the vault as a local REST service inside a container for your CI/CD pipelines.</p><code>docker run -p 3737:3737 enigmagent/vault</code></div>
+    </div>
+  </div>
+</section>
+
+<!-- FRAMEWORKS -->
+<section id="frameworks" style="background:var(--panel);border-top:1px solid var(--border);">
+  <div class="container">
+    <h2>Works with your stack</h2>
+    <p class="section-sub">EnigmAgent integrates with 40+ AI frameworks and tools out of the box.</p>
+    <div class="fw-grid">
+      <span class="fw-tag">LangChain</span><span class="fw-tag">CrewAI</span><span class="fw-tag">AutoGen</span><span class="fw-tag">LlamaIndex</span><span class="fw-tag">n8n</span><span class="fw-tag">OpenAI SDK</span><span class="fw-tag">Anthropic SDK</span><span class="fw-tag">LangGraph</span><span class="fw-tag">Haystack</span><span class="fw-tag">Semantic Kernel</span><span class="fw-tag">SmolagAgents</span><span class="fw-tag">Agno</span><span class="fw-tag">Mem0</span><span class="fw-tag">Phidata</span><span class="fw-tag">Claude</span><span class="fw-tag">Cursor</span><span class="fw-tag">VS Code</span><span class="fw-tag">JetBrains</span><span class="fw-tag">Docker</span><span class="fw-tag">GitHub Actions</span><span class="fw-tag">AWS Lambda</span><span class="fw-tag">Zapier</span><span class="fw-tag">Make</span><span class="fw-tag">+ many more</span>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-links">
+    <a href="https://github.com/agnuxo1/EnigmAgent">GitHub</a>
+    <a href="https://github.com/agnuxo1/EnigmAgent/issues">Support</a>
+    <a href="https://pypi.org/project/enigmagent/">PyPI</a>
+    <a href="https://www.npmjs.com/package/n8n-nodes-enigmagent">npm</a>
+    <a href="https://github.com/agnuxo1/EnigmAgent/blob/main/LICENSE">MIT License</a>
+  </div>
+  <p>
+    © 2026 EnigmAgent · Francisco Angulo de Lafuente · Built with
+    <svg style="display:inline;vertical-align:middle;margin:0 3px;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6abf69" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-heart"/></svg>
+    for the AI developer community
+  </p>
+</footer>
+
+</body>
+</html>
