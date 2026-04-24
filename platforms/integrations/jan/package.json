@@ -1,5 +1,5 @@
 {
-  "name": "@agnuxo1/enigmagent-jan",
+  "name": "@enigmagent/jan-extension",
   "version": "0.2.0",
   "description": "EnigmAgent secret vault extension for Jan.ai — resolves {{PLACEHOLDER}} tokens before sending to LLM.",
   "main": "dist/index.js",

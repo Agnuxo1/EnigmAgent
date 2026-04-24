@@ -1,0 +1,28 @@
+# Smithery configuration for enigmagent-mcp
+# https://smithery.ai/docs/config
+
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties:
+      host:
+        type: string
+        description: "EnigmAgent vault host (default: 127.0.0.1)"
+        default: "127.0.0.1"
+      port:
+        type: number
+        description: "EnigmAgent vault REST port (default: 3737)"
+        default: 3737
+    required: []
+  commandFunction: |-
+    (config) => ({
+      command: "npx",
+      args: [
+        "-y",
+        "enigmagent-mcp@latest",
+        "--mode", "mcp",
+        "--host", config.host || "127.0.0.1",
+        "--port", String(config.port || 3737)
+      ]
+    })

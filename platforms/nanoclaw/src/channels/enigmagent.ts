@@ -42,7 +42,7 @@ function vaultBase(ctx: ChannelContext): string {
 async function vaultGet<T>(url: string): Promise<T> {
   const res = await fetch(url);
   if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
+    const body = await res.json().catch(() => ({})) as { error?: string; message?: string };
     throw new Error(`EnigmAgent vault error (${body.error ?? res.status}): ${body.message ?? res.statusText}`);
   }
   return res.json() as Promise<T>;
@@ -55,7 +55,7 @@ async function vaultPost<T>(url: string, body: unknown): Promise<T> {
     body:    JSON.stringify(body),
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
+    const err = await res.json().catch(() => ({})) as { error?: string; message?: string };
     throw new Error(`EnigmAgent vault error (${err.error ?? res.status}): ${err.message ?? res.statusText}`);
   }
   return res.json() as Promise<T>;
