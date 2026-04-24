@@ -1,0 +1,13 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: EnigmAgent Vault Plugin
+Bundle-SymbolicName: enigmagent.plugin;singleton:=true
+Bundle-Version: 1.0.0.qualifier
+Bundle-Activator: enigmagent.plugin.Activator
+Bundle-Vendor: EnigmAgent (https://enigmagent.com)
+Require-Bundle: org.eclipse.ui,
+ org.eclipse.core.runtime,
+ org.eclipse.jface
+Bundle-RequiredExecutionEnvironment: JavaSE-17
+Bundle-ActivationPolicy: lazy
+Export-Package: enigmagent.plugin

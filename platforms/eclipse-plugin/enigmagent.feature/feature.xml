@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature
+      id="enigmagent.feature"
+      label="EnigmAgent Vault"
+      version="1.0.0.qualifier"
+      provider-name="EnigmAgent"
+      plugin="enigmagent.plugin">
+
+   <description url="https://enigmagent.com">
+      Secure local credential vault for Eclipse developers.
+      Store API keys encrypted and reference them as {{PLACEHOLDER}} anywhere in your workspace.
+   </description>
+
+   <copyright>
+      Copyright (c) 2024-2026 EnigmAgent contributors.
+   </copyright>
+
+   <license url="https://github.com/Agnuxo1/EnigmAgent/blob/main/LICENSE">
+      Apache License 2.0
+   </license>
+
+   <url>
+      <update label="EnigmAgent Update Site"
+              url="https://enigmagent.com/eclipse/updatesite"/>
+      <discovery label="EnigmAgent on Eclipse Marketplace"
+                 url="https://marketplace.eclipse.org/content/enigmagent-vault"/>
+   </url>
+
+   <plugin
+         id="enigmagent.plugin"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+</feature>

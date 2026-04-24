@@ -1,0 +1,21 @@
+{
+  "name": "enigmagent-lmstudio-plugin",
+  "version": "1.0.0",
+  "description": "EnigmAgent vault integration for LM Studio — resolve {{PLACEHOLDER}} secrets before sending to local models",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "keywords": ["lmstudio", "enigmagent", "vault", "secrets", "placeholder"],
+  "author": "EnigmAgent",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "@types/node": "^20.0.0"
+  },
+  "peerDependencies": {
+    "@lmstudio/sdk": ">=0.3.0"
+  }
+}

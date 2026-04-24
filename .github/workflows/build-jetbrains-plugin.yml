@@ -1,0 +1,67 @@
+name: Build & Publish JetBrains Plugin
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'platforms/jetbrains-plugin/**'
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Publish to JetBrains Marketplace'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: platforms/jetbrains-plugin
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v3
+
+      - name: Build plugin
+        run: ./gradlew buildPlugin --no-daemon
+
+      - name: Upload plugin artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: enigmagent-vault-plugin
+          path: platforms/jetbrains-plugin/build/distributions/*.zip
+          retention-days: 30
+
+      - name: Run plugin verifier
+        run: ./gradlew runPluginVerifier --no-daemon
+        continue-on-error: true
+
+      # ── Publish (manual trigger with publish=true or on tag) ────────────
+      - name: Sign plugin
+        if: ${{ github.event.inputs.publish == 'true' || startsWith(github.ref, 'refs/tags/') }}
+        run: ./gradlew signPlugin --no-daemon
+        env:
+          CERTIFICATE_CHAIN:    ${{ secrets.JB_CERTIFICATE_CHAIN }}
+          PRIVATE_KEY:          ${{ secrets.JB_PRIVATE_KEY }}
+          PRIVATE_KEY_PASSWORD: ${{ secrets.JB_PRIVATE_KEY_PASSWORD }}
+
+      - name: Publish plugin
+        if: ${{ github.event.inputs.publish == 'true' || startsWith(github.ref, 'refs/tags/') }}
+        run: ./gradlew publishPlugin --no-daemon
+        env:
+          CERTIFICATE_CHAIN:    ${{ secrets.JB_CERTIFICATE_CHAIN }}
+          PRIVATE_KEY:          ${{ secrets.JB_PRIVATE_KEY }}
+          PRIVATE_KEY_PASSWORD: ${{ secrets.JB_PRIVATE_KEY_PASSWORD }}
+          PUBLISH_TOKEN:        ${{ secrets.JB_PUBLISH_TOKEN }}
