@@ -31,8 +31,15 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      - name: Validate Gradle wrapper
-        uses: gradle/actions/wrapper-validation@v3
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Make gradlew executable / bootstrap wrapper
+        run: |
+          if [ ! -f gradlew ]; then
+            gradle wrapper --gradle-version 8.6 --distribution-type bin
+          fi
+          chmod +x gradlew
 
       - name: Build plugin
         run: ./gradlew buildPlugin --no-daemon
