@@ -26,4 +26,4 @@ export {
   b64,
   randomBytes,
   newUUID,
-} from '../../shared/vault-core.js';
+} from './vault-core.js';

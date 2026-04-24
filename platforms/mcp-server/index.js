@@ -31,7 +31,7 @@
 import { createServer }  from 'node:http';
 import { resolve }       from 'node:path';
 import { createInterface } from 'node:readline';
-import { VaultManager, FileStorage } from '../shared/vault-core.js';
+import { VaultManager, FileStorage } from './vault-core.js';
 
 // ── CLI argument parsing ──────────────────────────────────────────────────────
 
