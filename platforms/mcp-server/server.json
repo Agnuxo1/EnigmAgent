@@ -1,0 +1,28 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.agnuxo1/enigmagent",
+  "description": "Encrypted local vault for AI agents. Resolve {{PLACEHOLDER}} secrets via MCP without exposing real values to LLMs. AES-256-GCM + Argon2id.",
+  "repository": {
+    "url": "https://github.com/Agnuxo1/EnigmAgent",
+    "source": "github"
+  },
+  "version": "1.0.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "enigmagent-mcp",
+      "version": "1.0.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "runtimeArguments": [
+        {
+          "description": "Path to the encrypted vault file",
+          "isRequired": false,
+          "format": "string",
+          "value": "--vault ./my.vault.json"
+        }
+      ]
+    }
+  ]
+}

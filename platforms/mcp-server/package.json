@@ -1,6 +1,7 @@
 {
   "name": "enigmagent-mcp",
   "version": "1.0.0",
+  "mcpName": "io.github.agnuxo1/enigmagent",
   "private": false,
   "files": ["index.js", "vault-core.js", "README.md"],
   "description": "EnigmAgent MCP server — exposes your encrypted vault as an MCP tool for Open WebUI, AnythingLLM, LM Studio and any MCP-compatible AI agent.",
