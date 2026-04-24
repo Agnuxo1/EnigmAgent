@@ -1,11 +1,11 @@
 {
   "manifest_version": 3,
   "name": "EnigmAgent",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Encrypted local vault for AI agents. Secrets resolve at submit time via {{PLACEHOLDER}} — your LLM never sees real values. AES-256-GCM + Argon2id.",
   "author": "Francisco Angulo de Lafuente",
   "homepage_url": "https://github.com/agnuxo1/EnigmAgent",
-  "permissions": ["storage", "tabs", "scripting"],
+  "permissions": ["storage", "windows"],
   "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "background.js"

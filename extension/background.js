@@ -29,15 +29,7 @@ async function getVaultTabId() {
 }
 
 async function findVaultTab() {
-  // Fast path: cached id still alive?
-  const cached = await getVaultTabId();
-  if (cached != null) {
-    try {
-      const t = await chrome.tabs.get(cached);
-      if (t && t.url?.startsWith(chrome.runtime.getURL('vault.html'))) return t.id;
-    } catch {}
-  }
-  // Scan all tabs for a vault.html on our extension.
+  // Query only our own vault page — no `tabs` permission required.
   const url = chrome.runtime.getURL('vault.html');
   const tabs = await chrome.tabs.query({ url });
   if (tabs.length > 0) {
