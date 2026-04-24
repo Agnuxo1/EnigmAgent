@@ -21,6 +21,7 @@ dependencies {
         intellijIdeaCommunity("2024.1")
         bundledPlugin("com.intellij.java")
         testFramework(TestFrameworkType.Platform)
+        instrumentationTools()
     }
     implementation("com.google.code.gson:gson:2.10.1")
     testImplementation("junit:junit:4.13.2")
