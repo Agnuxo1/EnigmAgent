@@ -6,50 +6,88 @@ Three CrewAI-compatible tools agents can use:
   - EnigmAgentResolveTool     — resolve {{PLACEHOLDER}} tokens in text
   - EnigmAgentListSecretsTool — list stored names
 
+REST API (enigmagent-mcp --mode rest --port 3737 --vault ./vault.json):
+  GET  /status
+  GET  /list
+  POST /resolve  {"placeholder": "NAME", "origin": "https://..."}
+
 Requirements:
-    pip install crewai httpx
-    enigmagent serve --port 39517
+    pip install crewai
+    enigmagent-mcp --mode rest --port 3737 --vault ./vault.json
 """
 
 import re
-import httpx
+import json
+import urllib.request
+import urllib.error
 from crewai.tools import BaseTool
 from pydantic import BaseModel, Field
 
 
 # ── Vault helpers ──────────────────────────────────────────────────────────────
 
-_VAULT_URL = "http://127.0.0.1:39517"
-_VAULT_TOKEN = ""
+_VAULT_URL = "http://127.0.0.1:3737"
+_ORIGIN = "http://localhost"
 _cache: dict[str, str] = {}
 
 
-def configure(vault_url: str = "http://127.0.0.1:39517", vault_token: str = "") -> None:
-    global _VAULT_URL, _VAULT_TOKEN
+def configure(
+    vault_url: str = "http://127.0.0.1:3737",
+    origin: str = "http://localhost",
+) -> None:
+    global _VAULT_URL, _ORIGIN
     _VAULT_URL = vault_url.rstrip("/")
-    _VAULT_TOKEN = vault_token
+    _ORIGIN = origin
     _cache.clear()
+
+
+def _post(path: str, payload: dict) -> dict:
+    url = f"{_VAULT_URL}{path}"
+    data = json.dumps(payload).encode()
+    req = urllib.request.Request(
+        url, data=data,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            return json.loads(resp.read().decode())
+    except urllib.error.HTTPError as exc:
+        try:
+            body = json.loads(exc.read().decode())
+        except Exception:
+            body = {}
+        raise RuntimeError(body.get("message", str(exc))) from exc
+    except (urllib.error.URLError, OSError) as exc:
+        raise RuntimeError(
+            f"EnigmAgent server unreachable at {_VAULT_URL}. "
+            "Start with: enigmagent-mcp --mode rest --port 3737 --vault ./vault.json"
+        ) from exc
+
+
+def _get(path: str) -> dict:
+    url = f"{_VAULT_URL}{path}"
+    try:
+        with urllib.request.urlopen(url, timeout=5) as resp:
+            return json.loads(resp.read().decode())
+    except (urllib.error.URLError, OSError) as exc:
+        raise RuntimeError(f"EnigmAgent server unreachable at {_VAULT_URL}.") from exc
 
 
 def _fetch(name: str) -> str | None:
     if name in _cache:
         return _cache[name]
-    headers: dict[str, str] = {}
-    if _VAULT_TOKEN:
-        headers["Authorization"] = f"Bearer {_VAULT_TOKEN}"
     try:
-        with httpx.Client(timeout=3.0) as c:
-            r = c.get(f"{_VAULT_URL}/secret/{name}", headers=headers)
-            r.raise_for_status()
-            value = r.json().get("value")
-            if value:
-                _cache[name] = value
-            return value
+        data = _post("/resolve", {"placeholder": name, "origin": _ORIGIN})
+        value = data.get("value")
+        if value:
+            _cache[name] = value
+        return value
     except Exception:
         return None
 
 
-def _resolve(text: str) -> str:
+def _resolve_text(text: str) -> str:
     names = list(set(re.findall(r"\{\{([A-Za-z0-9_]+)\}\}", text)))
     if not names:
         return text
@@ -91,7 +129,7 @@ class EnigmAgentResolveTool(BaseTool):
     args_schema: type[BaseModel] = _ResolveInput
 
     def _run(self, text: str) -> str:
-        return _resolve(text)
+        return _resolve_text(text)
 
 
 class EnigmAgentListSecretsTool(BaseTool):
@@ -100,17 +138,12 @@ class EnigmAgentListSecretsTool(BaseTool):
         "List all secret names stored in the local EnigmAgent vault (names only, no values)."
     )
 
-    def _run(self) -> str:
-        headers: dict[str, str] = {}
-        if _VAULT_TOKEN:
-            headers["Authorization"] = f"Bearer {_VAULT_TOKEN}"
+    def _run(self, _: str = "") -> str:
         try:
-            with httpx.Client(timeout=3.0) as c:
-                r = c.get(f"{_VAULT_URL}/secrets", headers=headers)
-                r.raise_for_status()
-                secrets = r.json().get("secrets", [])
-                names = [s.get("name", s) if isinstance(s, dict) else s for s in secrets]
-                return ", ".join(names) or "No secrets stored."
+            data = _get("/list")
+            entries = data.get("entries", [])
+            names = [e.get("name", str(e)) if isinstance(e, dict) else str(e) for e in entries]
+            return ", ".join(names) or "No secrets stored."
         except Exception as e:
             return f"Vault error: {e}"
 
@@ -122,6 +155,9 @@ ALL_TOOLS = [EnigmAgentGetSecretTool(), EnigmAgentResolveTool(), EnigmAgentListS
 
 if __name__ == "__main__":
     from crewai import Agent, Task, Crew
+
+    # Configure to point at your running vault REST API (port 3737)
+    configure(vault_url="http://127.0.0.1:3737", origin="http://localhost")
 
     vault_agent = Agent(
         role="Credential Manager",

@@ -1,6 +1,6 @@
 {
   "name": "enigmagent-vault",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "displayName": "EnigmAgent Vault",
   "description": "Resolve {{PLACEHOLDER}} tokens in prompts using the local AES-256-GCM encrypted vault. Your LLM never sees real API keys.",
   "author": "Francisco Angulo de Lafuente",
@@ -18,26 +18,30 @@
       "required": false,
       "input": {
         "label": "Vault URL",
-        "description": "Base URL of the EnigmAgent REST API.",
-        "placeholder": "http://127.0.0.1:39517"
+        "description": "Base URL of the EnigmAgent REST API (start with: enigmagent-mcp --mode rest --port 3737 --vault ./vault.json).",
+        "placeholder": "http://127.0.0.1:3737"
       },
-      "value": "http://127.0.0.1:39517"
+      "value": "http://127.0.0.1:3737"
     },
-    "ENIGMAGENT_TOKEN": {
+    "ENIGMAGENT_ORIGIN": {
       "type": "string",
       "required": false,
       "input": {
-        "label": "Vault Token (optional)",
-        "description": "Bearer token for the vault. Leave empty for localhost.",
-        "placeholder": ""
+        "label": "Origin (for domain-binding)",
+        "description": "Origin URL sent with each resolve request. Must match the secret's bound domain.",
+        "placeholder": "http://localhost"
       },
-      "value": ""
+      "value": "http://localhost"
     }
   },
   "examples": [
     {
       "prompt": "Get my OpenAI API key",
       "call": "{\"secretName\": \"OPENAI_KEY\"}"
+    },
+    {
+      "prompt": "Resolve placeholders in: Bearer {{GITHUB_TOKEN}}",
+      "call": "{\"text\": \"Bearer {{GITHUB_TOKEN}}\"}"
     }
   ]
 }

@@ -1,20 +1,12 @@
 """
-EnigmAgent Tool for Open WebUI
-================================
-Resolves {{PLACEHOLDER}} references in prompts using the local EnigmAgent vault.
-
-Installation:
-  1. Copy this file to your Open WebUI tools directory.
-  2. Enable the tool in Admin > Tools.
-  3. Make sure the EnigmAgent vault REST API is running:
-       enigmagent serve --port 39517
-
-Usage in prompts:
-  Use {{SECRET_NAME}} anywhere in your prompt — EnigmAgent replaces them
-  with the real values before sending to the LLM.
-
-The LLM receives resolved values only at runtime; secrets are never
-stored in Open WebUI or sent to the model as plain text in history.
+title: EnigmAgent Secret Resolver
+author: Francisco Angulo de Lafuente
+author_url: https://github.com/agnuxo1
+funding_url: https://github.com/agnuxo1/EnigmAgent
+version: 1.0.0
+license: MIT
+description: Resolve {{PLACEHOLDER}} references from the EnigmAgent vault for AI agents. Secrets stay local — the LLM never sees real API keys in plaintext.
+requirements: requests
 """
 
 import re
@@ -26,14 +18,27 @@ from pydantic import BaseModel, Field
 
 
 class Tools:
+    """
+    Open WebUI tool — resolves {{PLACEHOLDER}} tokens in prompts using the local
+    EnigmAgent AES-256-GCM encrypted vault.
+
+    REST API required:
+        enigmagent-mcp --mode rest --port 3737 --vault ./vault.json
+
+    Endpoints used:
+        GET  /status
+        GET  /list
+        POST /resolve  {"placeholder": "NAME", "origin": "https://..."}
+    """
+
     class Valves(BaseModel):
         vault_url: str = Field(
-            default="http://127.0.0.1:39517",
-            description="Base URL of the EnigmAgent vault REST API.",
+            default="http://127.0.0.1:3737",
+            description="Base URL of the EnigmAgent vault REST API (default: http://127.0.0.1:3737).",
         )
-        vault_token: str = Field(
-            default="",
-            description="Vault unlock token (leave empty if the vault auto-unlocks on localhost).",
+        origin: str = Field(
+            default="http://localhost",
+            description="Origin sent to the vault for domain-binding checks.",
         )
         resolve_in_system: bool = Field(
             default=True,
@@ -43,33 +48,41 @@ class Tools:
     def __init__(self):
         self.valves = self.Valves()
 
-    # ------------------------------------------------------------------
-    # Public helpers (called by Open WebUI pipeline)
-    # ------------------------------------------------------------------
+    # ── Public tools (called by Open WebUI) ────────────────────────────────────
 
-    def resolve_placeholders(self, text: str) -> str:
+    def resolve_secret(self, placeholder: str, origin: str = "https://localhost") -> str:
         """
-        Replace every {{NAME}} in *text* with the vault value for NAME.
-        Unknown placeholders are left unchanged.
+        Resolve a {{PLACEHOLDER}} reference from the EnigmAgent vault.
+
+        Args:
+            placeholder: Secret name without braces (e.g. OPENAI_KEY).
+            origin: Requesting origin URL for domain-binding validation.
+
+        Returns:
+            The decrypted secret value, or an error message.
         """
-        placeholders = re.findall(r"\{\{([A-Za-z0-9_]+)\}\}", text)
-        if not placeholders:
-            return text
+        value = self._resolve_one(placeholder.strip(), origin or self.valves.origin)
+        if value is None:
+            return f'Secret "{placeholder}" not found in the EnigmAgent vault.'
+        return value
 
-        resolved: dict[str, str] = {}
-        for name in set(placeholders):
-            value = self._fetch_secret(name)
-            if value is not None:
-                resolved[name] = value
+    def list_secrets(self) -> list:
+        """
+        List all secret names available in the vault.
 
-        def replacer(m: re.Match) -> str:
-            return resolved.get(m.group(1), m.group(0))
+        Returns:
+            List of secret names (values are never returned).
+        """
+        url = f"{self.valves.vault_url.rstrip('/')}/list"
+        try:
+            with urllib.request.urlopen(url, timeout=5) as resp:
+                data = json.loads(resp.read().decode())
+                entries = data.get("entries", [])
+                return [e.get("name", str(e)) if isinstance(e, dict) else str(e) for e in entries]
+        except Exception as e:
+            return [f"Vault error: {e}"]
 
-        return re.sub(r"\{\{([A-Za-z0-9_]+)\}\}", replacer, text)
-
-    # ------------------------------------------------------------------
-    # Open WebUI tool entry-point
-    # ------------------------------------------------------------------
+    # ── Pipeline hook (auto-resolves placeholders in every message) ────────────
 
     def resolve(
         self,
@@ -78,7 +91,7 @@ class Tools:
         __event_emitter__: Callable[[dict], Any] | None = None,
     ) -> str:
         """
-        Resolve {{PLACEHOLDER}} tokens in *prompt* and return the result.
+        Resolve all {{PLACEHOLDER}} tokens in *prompt* and return the result.
 
         Open WebUI calls this when the user's message contains a tool call
         or when the tool is set to run automatically on every message.
@@ -100,20 +113,39 @@ class Tools:
 
         return result
 
-    # ------------------------------------------------------------------
-    # Private
-    # ------------------------------------------------------------------
+    # ── Private helpers ────────────────────────────────────────────────────────
 
-    def _fetch_secret(self, name: str) -> str | None:
-        """Call the local vault REST API and return the plaintext value."""
-        url = f"{self.valves.vault_url.rstrip('/')}/secret/{name}"
-        headers = {"Content-Type": "application/json"}
-        if self.valves.vault_token:
-            headers["Authorization"] = f"Bearer {self.valves.vault_token}"
+    def resolve_placeholders(self, text: str) -> str:
+        """Replace every {{NAME}} in *text* with the vault value for NAME."""
+        placeholders = list(set(re.findall(r"\{\{([A-Za-z0-9_]+)\}\}", text)))
+        if not placeholders:
+            return text
 
-        req = urllib.request.Request(url, headers=headers, method="GET")
+        origin = self.valves.origin
+        resolved: dict[str, str] = {}
+        for name in placeholders:
+            value = self._resolve_one(name, origin)
+            if value is not None:
+                resolved[name] = value
+
+        return re.sub(
+            r"\{\{([A-Za-z0-9_]+)\}\}",
+            lambda m: resolved.get(m.group(1), m.group(0)),
+            text,
+        )
+
+    def _resolve_one(self, name: str, origin: str) -> str | None:
+        """Call POST /resolve on the EnigmAgent REST API."""
+        base = self.valves.vault_url.rstrip("/")
+        url = f"{base}/resolve"
+        payload = json.dumps({"placeholder": name, "origin": origin}).encode()
+        req = urllib.request.Request(
+            url, data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
         try:
-            with urllib.request.urlopen(req, timeout=3) as resp:
+            with urllib.request.urlopen(req, timeout=5) as resp:
                 data = json.loads(resp.read().decode())
                 return data.get("value")
         except (urllib.error.URLError, json.JSONDecodeError, KeyError):

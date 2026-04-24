@@ -1,51 +1,90 @@
 """
 EnigmAgent Tool for LlamaIndex
 ================================
-Provides two LlamaIndex-compatible tools:
-  1. EnigmAgentGetSecretTool  — retrieve a single secret by name
-  2. EnigmAgentResolveTool    — resolve all {{PLACEHOLDER}} tokens in text
+Provides three LlamaIndex-compatible tools:
+  1. EnigmAgentGetSecretTool     — retrieve a single secret by name
+  2. EnigmAgentResolveTool       — resolve all {{PLACEHOLDER}} tokens in text
+  3. EnigmAgentListSecretsTool   — list stored secret names
 
 Works with LlamaIndex ReActAgent, OpenAIAgent, and any FunctionCallingAgent.
 
+REST API (enigmagent-mcp --mode rest --port 3737 --vault ./vault.json):
+  GET  /status
+  GET  /list
+  POST /resolve  {"placeholder": "NAME", "origin": "https://..."}
+
 Requirements:
-    pip install llama-index httpx
-    enigmagent serve --port 39517
+    pip install llama-index
+    enigmagent-mcp --mode rest --port 3737 --vault ./vault.json
 """
 
 import re
-import httpx
+import json
+import urllib.request
+import urllib.error
 from llama_index.core.tools import FunctionTool
 
 
 # ── Vault helpers ──────────────────────────────────────────────────────────────
 
-_VAULT_URL = "http://127.0.0.1:39517"
-_VAULT_TOKEN = ""
+_VAULT_URL = "http://127.0.0.1:3737"
+_ORIGIN = "http://localhost"
 _cache: dict[str, str] = {}
 
 
-def configure(vault_url: str = "http://127.0.0.1:39517", vault_token: str = "") -> None:
+def configure(
+    vault_url: str = "http://127.0.0.1:3737",
+    origin: str = "http://localhost",
+) -> None:
     """Override default vault settings."""
-    global _VAULT_URL, _VAULT_TOKEN
+    global _VAULT_URL, _ORIGIN
     _VAULT_URL = vault_url.rstrip("/")
-    _VAULT_TOKEN = vault_token
+    _ORIGIN = origin
     _cache.clear()
+
+
+def _post(path: str, payload: dict) -> dict:
+    url = f"{_VAULT_URL}{path}"
+    data = json.dumps(payload).encode()
+    req = urllib.request.Request(
+        url, data=data,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            return json.loads(resp.read().decode())
+    except urllib.error.HTTPError as exc:
+        try:
+            body = json.loads(exc.read().decode())
+        except Exception:
+            body = {}
+        raise RuntimeError(body.get("message", str(exc))) from exc
+    except (urllib.error.URLError, OSError) as exc:
+        raise RuntimeError(
+            f"EnigmAgent server unreachable at {_VAULT_URL}. "
+            "Start with: enigmagent-mcp --mode rest --port 3737 --vault ./vault.json"
+        ) from exc
+
+
+def _get(path: str) -> dict:
+    url = f"{_VAULT_URL}{path}"
+    try:
+        with urllib.request.urlopen(url, timeout=5) as resp:
+            return json.loads(resp.read().decode())
+    except (urllib.error.URLError, OSError) as exc:
+        raise RuntimeError(f"EnigmAgent server unreachable at {_VAULT_URL}.") from exc
 
 
 def _fetch(name: str) -> str | None:
     if name in _cache:
         return _cache[name]
-    headers: dict[str, str] = {}
-    if _VAULT_TOKEN:
-        headers["Authorization"] = f"Bearer {_VAULT_TOKEN}"
     try:
-        with httpx.Client(timeout=3.0) as c:
-            r = c.get(f"{_VAULT_URL}/secret/{name}", headers=headers)
-            r.raise_for_status()
-            value = r.json().get("value")
-            if value:
-                _cache[name] = value
-            return value
+        data = _post("/resolve", {"placeholder": name, "origin": _ORIGIN})
+        value = data.get("value")
+        if value:
+            _cache[name] = value
+        return value
     except Exception:
         return None
 
@@ -92,16 +131,11 @@ def list_secrets() -> str:
     Returns:
         Comma-separated list of secret names (values are never returned).
     """
-    headers: dict[str, str] = {}
-    if _VAULT_TOKEN:
-        headers["Authorization"] = f"Bearer {_VAULT_TOKEN}"
     try:
-        with httpx.Client(timeout=3.0) as c:
-            r = c.get(f"{_VAULT_URL}/secrets", headers=headers)
-            r.raise_for_status()
-            secrets = r.json().get("secrets", [])
-            names = [s.get("name", s) if isinstance(s, dict) else s for s in secrets]
-            return ", ".join(names) if names else "No secrets stored."
+        data = _get("/list")
+        entries = data.get("entries", [])
+        names = [e.get("name", str(e)) if isinstance(e, dict) else str(e) for e in entries]
+        return ", ".join(names) if names else "No secrets stored."
     except Exception as e:
         return f"Vault error: {e}"
 
@@ -121,6 +155,9 @@ ALL_TOOLS = [EnigmAgentGetSecretTool, EnigmAgentResolveTool, EnigmAgentListSecre
 if __name__ == "__main__":
     from llama_index.core.agent import ReActAgent
     from llama_index.llms.openai import OpenAI
+
+    # Configure to point at your running vault REST API (port 3737)
+    configure(vault_url="http://127.0.0.1:3737", origin="http://localhost")
 
     # The LLM key is retrieved from the vault — not hardcoded!
     openai_key = get_secret("OPENAI_KEY")

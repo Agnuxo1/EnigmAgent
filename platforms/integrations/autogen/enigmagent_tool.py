@@ -4,42 +4,79 @@ EnigmAgent Integration for AutoGen (Microsoft)
 Registers vault tools for use with AutoGen ConversableAgent and AssistantAgent.
 Works with both AutoGen 0.2.x (function_map) and AutoGen 0.4+ (tool decorators).
 
+REST API (enigmagent-mcp --mode rest --port 3737 --vault ./vault.json):
+  GET  /status
+  GET  /list
+  POST /resolve  {"placeholder": "NAME", "origin": "https://..."}
+
 Requirements:
-    pip install pyautogen httpx
-    enigmagent serve --port 39517
+    pip install pyautogen
+    enigmagent-mcp --mode rest --port 3737 --vault ./vault.json
 """
 
 import re
 import json
-import httpx
+import urllib.request
+import urllib.error
 from typing import Annotated
 
-_VAULT_URL = "http://127.0.0.1:39517"
-_VAULT_TOKEN = ""
+_VAULT_URL = "http://127.0.0.1:3737"
+_ORIGIN = "http://localhost"
 _cache: dict[str, str] = {}
 
 
-def configure(vault_url: str = "http://127.0.0.1:39517", vault_token: str = "") -> None:
-    global _VAULT_URL, _VAULT_TOKEN
+def configure(
+    vault_url: str = "http://127.0.0.1:3737",
+    origin: str = "http://localhost",
+) -> None:
+    global _VAULT_URL, _ORIGIN
     _VAULT_URL = vault_url.rstrip("/")
-    _VAULT_TOKEN = vault_token
+    _ORIGIN = origin
     _cache.clear()
+
+
+def _post(path: str, payload: dict) -> dict:
+    url = f"{_VAULT_URL}{path}"
+    data = json.dumps(payload).encode()
+    req = urllib.request.Request(
+        url, data=data,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            return json.loads(resp.read().decode())
+    except urllib.error.HTTPError as exc:
+        try:
+            body = json.loads(exc.read().decode())
+        except Exception:
+            body = {}
+        raise RuntimeError(body.get("message", str(exc))) from exc
+    except (urllib.error.URLError, OSError) as exc:
+        raise RuntimeError(
+            f"EnigmAgent server unreachable at {_VAULT_URL}. "
+            "Start with: enigmagent-mcp --mode rest --port 3737 --vault ./vault.json"
+        ) from exc
+
+
+def _get(path: str) -> dict:
+    url = f"{_VAULT_URL}{path}"
+    try:
+        with urllib.request.urlopen(url, timeout=5) as resp:
+            return json.loads(resp.read().decode())
+    except (urllib.error.URLError, OSError) as exc:
+        raise RuntimeError(f"EnigmAgent server unreachable at {_VAULT_URL}.") from exc
 
 
 def _fetch(name: str) -> str | None:
     if name in _cache:
         return _cache[name]
-    headers: dict[str, str] = {}
-    if _VAULT_TOKEN:
-        headers["Authorization"] = f"Bearer {_VAULT_TOKEN}"
     try:
-        with httpx.Client(timeout=3.0) as c:
-            r = c.get(f"{_VAULT_URL}/secret/{name}", headers=headers)
-            r.raise_for_status()
-            value = r.json().get("value")
-            if value:
-                _cache[name] = value
-            return value
+        data = _post("/resolve", {"placeholder": name, "origin": _ORIGIN})
+        value = data.get("value")
+        if value:
+            _cache[name] = value
+        return value
     except Exception:
         return None
 
@@ -65,23 +102,17 @@ def resolve_placeholders(
 
 def list_secrets() -> str:
     """List all secret names stored in the local EnigmAgent vault (names only)."""
-    headers: dict[str, str] = {}
-    if _VAULT_TOKEN:
-        headers["Authorization"] = f"Bearer {_VAULT_TOKEN}"
     try:
-        with httpx.Client(timeout=3.0) as c:
-            r = c.get(f"{_VAULT_URL}/secrets", headers=headers)
-            r.raise_for_status()
-            secrets = r.json().get("secrets", [])
-            names = [s.get("name", s) if isinstance(s, dict) else s for s in secrets]
-            return json.dumps(names)
+        data = _get("/list")
+        entries = data.get("entries", [])
+        names = [e.get("name", str(e)) if isinstance(e, dict) else str(e) for e in entries]
+        return json.dumps(names)
     except Exception as e:
         return f"Vault error: {e}"
 
 
 # ── AutoGen 0.2.x function_map ────────────────────────────────────────────────
 
-# Function schemas for AutoGen 0.2 OpenAI function calling format
 FUNCTION_MAP = {
     "get_secret": get_secret,
     "resolve_placeholders": resolve_placeholders,
@@ -122,6 +153,9 @@ FUNCTION_SCHEMAS = [
 # ── Example usage ──────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
+    # Configure to point at your running vault REST API (port 3737)
+    configure(vault_url="http://127.0.0.1:3737", origin="http://localhost")
+
     # AutoGen 0.4+ style
     try:
         from autogen import ConversableAgent, AssistantAgent, UserProxyAgent, register_function

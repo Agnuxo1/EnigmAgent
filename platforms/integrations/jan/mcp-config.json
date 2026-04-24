@@ -1,0 +1,6 @@
+{
+  "name": "EnigmAgent",
+  "description": "AES-256-GCM + Argon2id encrypted secret vault for AI agents. Keeps secrets local while letting agents use {{PLACEHOLDER}} references.",
+  "command": "npx enigmagent-mcp --vault ./enigmagent-vault.json",
+  "env": {}
+}

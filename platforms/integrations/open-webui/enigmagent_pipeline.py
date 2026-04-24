@@ -4,6 +4,11 @@ EnigmAgent Pipeline for Open WebUI (Filter)
 Transparently resolves {{PLACEHOLDER}} tokens in every message before
 it reaches the LLM — no manual tool calls required.
 
+REST API (enigmagent-mcp --mode rest --port 3737 --vault ./vault.json):
+  GET  /status
+  GET  /list
+  POST /resolve  {"placeholder": "NAME", "origin": "https://..."}
+
 Installation (Open WebUI < 0.4 / Pipelines server):
   1. Start the Pipelines server (https://github.com/open-webui/pipelines).
   2. Upload this file via Admin > Pipelines > Upload.
@@ -22,12 +27,12 @@ import urllib.error
 class Pipeline:
     class Valves(BaseModel):
         vault_url: str = Field(
-            default="http://127.0.0.1:39517",
-            description="EnigmAgent vault REST API base URL.",
+            default="http://127.0.0.1:3737",
+            description="EnigmAgent vault REST API base URL (start with: enigmagent-mcp --mode rest --port 3737 --vault ./vault.json).",
         )
-        vault_token: str = Field(
-            default="",
-            description="Bearer token for the vault (optional).",
+        origin: str = Field(
+            default="http://localhost",
+            description="Origin sent to vault for domain-binding checks.",
         )
         pipelines: list[str] = Field(
             default=["*"],
@@ -76,12 +81,15 @@ class Pipeline:
         )
 
     def _fetch(self, name: str) -> str | None:
-        url = f"{self.valves.vault_url.rstrip('/')}/secret/{name}"
-        headers = {"Accept": "application/json"}
-        if self.valves.vault_token:
-            headers["Authorization"] = f"Bearer {self.valves.vault_token}"
+        """Call POST /resolve on the EnigmAgent REST API."""
+        url = f"{self.valves.vault_url.rstrip('/')}/resolve"
+        payload = json.dumps({"placeholder": name, "origin": self.valves.origin}).encode()
         try:
-            req = urllib.request.Request(url, headers=headers)
+            req = urllib.request.Request(
+                url, data=payload,
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
             with urllib.request.urlopen(req, timeout=3) as r:
                 return json.loads(r.read().decode()).get("value")
         except Exception:

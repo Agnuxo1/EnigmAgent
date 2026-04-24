@@ -4,9 +4,10 @@
  * Intercepts outgoing messages and resolves {{PLACEHOLDER}} tokens
  * using the local EnigmAgent vault before they reach the LLM engine.
  *
- * Requirements:
- *   - Jan.ai 0.4+
- *   - enigmagent serve --port 39517 (vault must be running)
+ * REST API (enigmagent-mcp --mode rest --port 3737 --vault ./vault.json):
+ *   GET  /status
+ *   GET  /list
+ *   POST /resolve  {"placeholder": "NAME", "origin": "https://..."}
  *
  * Install:
  *   npm run package
@@ -24,18 +25,18 @@ import {
 
 const EXTENSION_ID = "enigmagent";
 const VAULT_URL_KEY = "enigmagent.vaultUrl";
-const VAULT_TOKEN_KEY = "enigmagent.vaultToken";
+const VAULT_ORIGIN_KEY = "enigmagent.origin";
 
 const _cache = new Map<string, string>();
 
 export default class EnigmAgentExtension extends AssistantExtension {
-  private vaultUrl = "http://127.0.0.1:39517";
-  private vaultToken = "";
+  private vaultUrl = "http://127.0.0.1:3737";
+  private origin = "http://localhost";
 
   async onLoad() {
     const config = await this.getConfiguration?.();
-    this.vaultUrl = (config?.[VAULT_URL_KEY] as string) || "http://127.0.0.1:39517";
-    this.vaultToken = (config?.[VAULT_TOKEN_KEY] as string) || "";
+    this.vaultUrl = (config?.[VAULT_URL_KEY] as string) || "http://127.0.0.1:3737";
+    this.origin = (config?.[VAULT_ORIGIN_KEY] as string) || "http://localhost";
 
     // Hook into message sending
     events.on(EventName.OnMessageSent, this.onMessageSent.bind(this));
@@ -60,27 +61,38 @@ export default class EnigmAgentExtension extends AssistantExtension {
   }
 
   private async resolve(text: string): Promise<string> {
-    const names = [...new Set(text.match(/\{\{([A-Za-z0-9_]+)\}\}/g)?.map((m) => m.slice(2, -2)) ?? [])];
+    const names = [
+      ...new Set(
+        text.match(/\{\{([A-Za-z0-9_]+)\}\}/g)?.map((m) => m.slice(2, -2)) ?? []
+      ),
+    ];
     if (!names.length) return text;
 
-    const pairs = await Promise.all(names.map(async (n) => [n, await this.fetchSecret(n)] as const));
-    const map = Object.fromEntries(pairs.filter(([, v]) => v !== null)) as Record<string, string>;
+    const pairs = await Promise.all(
+      names.map(async (n) => [n, await this.fetchSecret(n)] as const)
+    );
+    const map = Object.fromEntries(
+      pairs.filter(([, v]) => v !== null)
+    ) as Record<string, string>;
 
     return text.replace(/\{\{([A-Za-z0-9_]+)\}\}/g, (_, n) => map[n] ?? `{{${n}}}`);
   }
 
+  /** Resolve via POST /resolve (the actual EnigmAgent REST API endpoint). */
   private async fetchSecret(name: string): Promise<string | null> {
     if (_cache.has(name)) return _cache.get(name)!;
 
-    const url = `${this.vaultUrl.replace(/\/$/, "")}/secret/${encodeURIComponent(name)}`;
-    const headers: Record<string, string> = { Accept: "application/json" };
-    if (this.vaultToken) headers["Authorization"] = `Bearer ${this.vaultToken}`;
-
+    const url = `${this.vaultUrl.replace(/\/$/, "")}/resolve`;
     try {
-      const res = await fetch(url, { headers, signal: AbortSignal.timeout(3000) });
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ placeholder: name, origin: this.origin }),
+        signal: AbortSignal.timeout(3000),
+      });
       if (!res.ok) return null;
       const data = await res.json();
-      const value = data?.value ?? null;
+      const value: string | null = data?.value ?? null;
       if (value) _cache.set(name, value);
       return value;
     } catch {
@@ -94,17 +106,18 @@ export default class EnigmAgentExtension extends AssistantExtension {
       {
         key: VAULT_URL_KEY,
         title: "Vault URL",
-        description: "Base URL of the EnigmAgent REST API.",
+        description:
+          "Base URL of the EnigmAgent REST API (start with: enigmagent-mcp --mode rest --port 3737 --vault ./vault.json).",
         type: "string",
-        default: "http://127.0.0.1:39517",
+        default: "http://127.0.0.1:3737",
       },
       {
-        key: VAULT_TOKEN_KEY,
-        title: "Vault Token",
-        description: "Bearer token (optional — leave empty for localhost).",
+        key: VAULT_ORIGIN_KEY,
+        title: "Origin",
+        description:
+          "Origin URL sent for domain-binding validation. Must match the secret's configured domain.",
         type: "string",
-        default: "",
-        inputType: "password",
+        default: "http://localhost",
       },
     ];
   }

@@ -4,9 +4,14 @@ EnigmAgent Component for Haystack 2.x
 A Haystack Pipeline component that resolves {{PLACEHOLDER}} tokens
 using the local EnigmAgent vault before passing text to other components.
 
+REST API (enigmagent-mcp --mode rest --port 3737 --vault ./vault.json):
+  GET  /status
+  GET  /list
+  POST /resolve  {"placeholder": "NAME", "origin": "https://..."}
+
 Requirements:
-    pip install haystack-ai httpx
-    enigmagent serve --port 39517
+    pip install haystack-ai
+    enigmagent-mcp --mode rest --port 3737 --vault ./vault.json
 
 Usage in a Pipeline:
     from haystack import Pipeline
@@ -21,11 +26,29 @@ Usage in a Pipeline:
 """
 
 import re
-import httpx
-import os
+import json
+import urllib.request
+import urllib.error
 from typing import Optional
 from haystack import component, default_from_dict, default_to_dict
 from haystack.core.component import Component
+
+
+def _post_resolve(vault_url: str, placeholder: str, origin: str, timeout: float = 5.0) -> Optional[str]:
+    """Call POST /resolve on the EnigmAgent REST API."""
+    url = f"{vault_url}/resolve"
+    payload = json.dumps({"placeholder": placeholder, "origin": origin}).encode()
+    req = urllib.request.Request(
+        url, data=payload,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            data = json.loads(resp.read().decode())
+            return data.get("value")
+    except Exception:
+        return None
 
 
 @component
@@ -37,11 +60,11 @@ class EnigmAgentResolver:
 
     def __init__(
         self,
-        vault_url: str = "http://127.0.0.1:39517",
-        vault_token: str = "",
+        vault_url: str = "http://127.0.0.1:3737",
+        origin: str = "http://localhost",
     ):
         self.vault_url = vault_url.rstrip("/")
-        self.vault_token = vault_token
+        self.origin = origin
         self._cache: dict[str, str] = {}
 
     @component.output_types(resolved_text=str, resolved_count=int)
@@ -60,7 +83,16 @@ class EnigmAgentResolver:
         if not names:
             return {"resolved_text": text, "resolved_count": 0}
 
-        mapping = {n: v for n in names if (v := self._fetch(n)) is not None}
+        mapping: dict[str, str] = {}
+        for name in names:
+            if name in self._cache:
+                mapping[name] = self._cache[name]
+            else:
+                value = _post_resolve(self.vault_url, name, self.origin)
+                if value is not None:
+                    self._cache[name] = value
+                    mapping[name] = value
+
         resolved = re.sub(
             r"\{\{([A-Za-z0-9_]+)\}\}",
             lambda m: mapping.get(m.group(1), m.group(0)),
@@ -68,25 +100,8 @@ class EnigmAgentResolver:
         )
         return {"resolved_text": resolved, "resolved_count": len(mapping)}
 
-    def _fetch(self, name: str) -> str | None:
-        if name in self._cache:
-            return self._cache[name]
-        headers: dict[str, str] = {}
-        if self.vault_token:
-            headers["Authorization"] = f"Bearer {self.vault_token}"
-        try:
-            with httpx.Client(timeout=3.0) as c:
-                r = c.get(f"{self.vault_url}/secret/{name}", headers=headers)
-                r.raise_for_status()
-                value = r.json().get("value")
-                if value:
-                    self._cache[name] = value
-                return value
-        except Exception:
-            return None
-
     def to_dict(self) -> dict:
-        return default_to_dict(self, vault_url=self.vault_url, vault_token="")
+        return default_to_dict(self, vault_url=self.vault_url, origin=self.origin)
 
     @classmethod
     def from_dict(cls, data: dict) -> "EnigmAgentResolver":
@@ -99,31 +114,51 @@ class EnigmAgentGetSecret:
     Haystack component that retrieves a single secret from the vault by name.
     """
 
-    def __init__(self, vault_url: str = "http://127.0.0.1:39517", vault_token: str = ""):
+    def __init__(
+        self,
+        vault_url: str = "http://127.0.0.1:3737",
+        origin: str = "http://localhost",
+    ):
         self.vault_url = vault_url.rstrip("/")
-        self.vault_token = vault_token
+        self.origin = origin
 
     @component.output_types(value=Optional[str], found=bool)
     def run(self, name: str) -> dict:
-        headers: dict[str, str] = {}
-        if self.vault_token:
-            headers["Authorization"] = f"Bearer {self.vault_token}"
+        value = _post_resolve(self.vault_url, name, self.origin)
+        return {"value": value, "found": value is not None}
+
+
+@component
+class EnigmAgentListSecrets:
+    """
+    Haystack component that lists all secret names from the vault.
+    """
+
+    def __init__(self, vault_url: str = "http://127.0.0.1:3737"):
+        self.vault_url = vault_url.rstrip("/")
+
+    @component.output_types(names=list, count=int)
+    def run(self) -> dict:
+        url = f"{self.vault_url}/list"
         try:
-            with httpx.Client(timeout=3.0) as c:
-                r = c.get(f"{self.vault_url}/secret/{name}", headers=headers)
-                r.raise_for_status()
-                value = r.json().get("value")
-                return {"value": value, "found": value is not None}
+            with urllib.request.urlopen(url, timeout=5) as resp:
+                data = json.loads(resp.read().decode())
+                entries = data.get("entries", [])
+                names = [e.get("name", str(e)) if isinstance(e, dict) else str(e) for e in entries]
+                return {"names": names, "count": len(names)}
         except Exception:
-            return {"value": None, "found": False}
+            return {"names": [], "count": 0}
 
 
 # ── Example ────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     from haystack import Pipeline
 
+    # Start vault first:
+    # enigmagent-mcp --mode rest --port 3737 --vault ./vault.json
+
     pipe = Pipeline()
-    pipe.add_component("resolver", EnigmAgentResolver())
+    pipe.add_component("resolver", EnigmAgentResolver(vault_url="http://127.0.0.1:3737"))
 
     result = pipe.run({"resolver": {"text": "My API key: {{OPENAI_KEY}}. Use it wisely."}})
     print(result["resolver"]["resolved_text"])
