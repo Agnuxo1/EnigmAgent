@@ -8,7 +8,7 @@ import java.net.URL
 
 data class VaultStatus(val running: Boolean, val unlocked: Boolean, val message: String)
 data class VaultEntry(val id: String, val name: String, val domain: String?)
-data class VaultError(val code: String, val message: String) : Exception(message)
+data class VaultError(val code: String, override val message: String) : Exception(message)
 
 /**
  * Lightweight HTTP client for the EnigmAgent local REST API.
