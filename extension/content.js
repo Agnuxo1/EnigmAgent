@@ -105,9 +105,9 @@ async function onSubmit(e) {
 }
 
 async function resolveValue(template) {
-  PLACEHOLDER_RE.lastIndex = 0;
-  const matches = [...template.matchAll(PLACEHOLDER_RE)];
-  PLACEHOLDER_RE.lastIndex = 0;
+  // Use a fresh regex instance to avoid lastIndex state pollution on exception paths.
+  const RE = /\{\{([A-Za-z0-9_:\-.@]+)\}\}/g;
+  const matches = [...template.matchAll(RE)];
   let out = template;
   for (const m of matches) {
     const reply = await chrome.runtime.sendMessage({

@@ -173,9 +173,17 @@ async function addSecret({ name, domain, value }) {
   return entry;
 }
 async function updateSecret(id, patch) {
+  if (!state.key) throw new Error('Vault is locked.');
   const e = state.vault.entries.find(x => x.id === id);
   if (!e) throw new Error('Not found.');
-  if (patch.name !== undefined) e.name = patch.name;
+  if (patch.name !== undefined) {
+    if (!/^[A-Z0-9_:\-.@]+$/i.test(patch.name)) {
+      throw new Error('Name may only contain letters, digits, and _ : - . @');
+    }
+    const conflict = state.vault.entries.find(x => x.id !== id && x.name.toLowerCase() === patch.name.toLowerCase());
+    if (conflict) throw new Error(`A secret named "${patch.name}" already exists.`);
+    e.name = patch.name;
+  }
   if (patch.domain !== undefined) e.domain = patch.domain || null;
   if (patch.value !== undefined) {
     const { nonce, ciphertext } = await encryptString(state.key, patch.value);
@@ -332,8 +340,14 @@ async function runCommand(input) {
     if (cmd === 'rename') {
       const [_, oldName, newName] = parts;
       if (!oldName || !newName) throw new Error('Usage: rename OLD NEW');
+      if (!/^[A-Z0-9_:\-.@]+$/i.test(newName)) {
+        throw new Error('New name may only contain letters, digits, and _ : - . @');
+      }
       const e = findByName(oldName);
       if (!e) throw new Error(`No secret named "${oldName}".`);
+      if (state.vault.entries.some(x => x.id !== e.id && x.name.toLowerCase() === newName.toLowerCase())) {
+        throw new Error(`A secret named "${newName}" already exists.`);
+      }
       e.name = newName;
       await saveVault();
       renderSecrets();

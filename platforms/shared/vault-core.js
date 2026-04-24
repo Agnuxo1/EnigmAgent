@@ -245,8 +245,8 @@ export class FileStorage {
     catch { return null; }
   }
   async save(vault) {
-    const { writeFileSync, mkdirSync, dirname } = await import('node:fs');
-    const { resolve } = await import('node:path');
+    const { writeFileSync, mkdirSync } = await import('node:fs');
+    const { resolve, dirname } = await import('node:path');
     mkdirSync(dirname(resolve(this.path)), { recursive: true });
     writeFileSync(this.path, JSON.stringify(vault, null, 2), 'utf8');
   }
