@@ -55,3 +55,15 @@ Cargo.lock
 # Logs / temp
 *.log
 .tmp/
+
+# Local vault files — never commit real or test vault data
+*.vault.json
+enigmagent-vault*.json
+vault-*.json
+vault-test.json
+my.vault.json
+
+# Internal launch / dev notes
+PUSH.md
+LAUNCH_REPORT.md
+.internal/
