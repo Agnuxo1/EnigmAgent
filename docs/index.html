@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EnigmAgent — Local Encrypted Vault for AI Agents</title>
+  <meta name="description" content="Local encrypted vault that resolves {{PLACEHOLDER}} secrets at runtime so LLMs never see real API keys. AES-256-GCM + Argon2id. Zero cloud.">
+  <style>
+    :root { --bg:#0f172a; --bg2:#1e293b; --accent:#a855f7; --accent2:#9333ea; --text:#f8fafc; --dim:#94a3b8; --border:#334155; }
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+    a{color:var(--accent);text-decoration:none}
+    .hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2rem;background:radial-gradient(ellipse at 50% 0%,#312e81 0%,transparent 60%),var(--bg);position:relative}
+    .hero-content{max-width:800px;position:relative;z-index:1}
+    .badge{display:inline-block;background:rgba(168,85,247,0.15);border:1px solid var(--accent);color:var(--accent);padding:.5rem 1.2rem;border-radius:100px;font-size:.875rem;font-weight:600;margin-bottom:2rem}
+    .hero h1{font-size:clamp(2.5rem,6vw,4.5rem);font-weight:800;line-height:1.05;margin-bottom:1.5rem}
+    .hero h1 span{color:var(--accent)}
+    .hero p{color:var(--dim);font-size:clamp(1.1rem,2.5vw,1.35rem);max-width:600px;margin:0 auto 2.5rem}
+    .cta-group{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
+    .btn{display:inline-flex;align-items:center;gap:.5rem;padding:1rem 2rem;border-radius:12px;font-weight:600;transition:all .2s}
+    .btn-primary{background:var(--accent);color:white;box-shadow:0 4px 24px rgba(168,85,247,0.4)}
+    .btn-primary:hover{transform:translateY(-2px)}
+    .btn-secondary{background:transparent;border:1px solid var(--border);color:var(--text)}
+    .features{padding:6rem 2rem;background:var(--bg2);border-top:1px solid var(--border)}
+    .section-header{text-align:center;max-width:700px;margin:0 auto 4rem}
+    .section-header h2{font-size:clamp(2rem,4vw,3rem);font-weight:800;margin-bottom:1rem}
+    .section-header p{color:var(--dim);font-size:1.125rem}
+    .features-grid{max-width:1000px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:2rem}
+    .feature-card{background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:2rem;transition:all .2s}
+    .feature-card:hover{transform:translateY(-4px);border-color:var(--accent)}
+    .feature-icon{font-size:2.5rem;margin-bottom:1rem}
+    .feature-card h3{font-size:1.25rem;font-weight:700;margin-bottom:.75rem}
+    .feature-card p{color:var(--dim);font-size:.9375rem}
+    .code-block{max-width:700px;margin:3rem auto 0;background:var(--bg);border:1px solid var(--border);border-radius:16px;padding:1.5rem 2rem;font-family:monospace;text-align:left}
+    .code-block code{color:var(--accent);font-size:.9375rem}
+    .ecosystem{padding:4rem 2rem;background:var(--bg);border-top:1px solid var(--border);text-align:center}
+    .eco-grid{max-width:800px;margin:2rem auto 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem}
+    .eco-item{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:1.25rem 1rem;transition:all .2s}
+    .eco-item:hover{border-color:var(--accent);transform:translateY(-2px)}
+    .eco-emoji{font-size:2rem;margin-bottom:.5rem}
+    .eco-name{font-weight:700;font-size:.9375rem}
+    footer{padding:3rem 2rem;background:var(--bg);border-top:1px solid var(--border);text-align:center;color:var(--dim);font-size:.875rem}
+  </style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="hero-content">
+    <div class="badge">🔐 Part of the P2PCLAW Ecosystem</div>
+    <h1>Your Agent's Secrets<br>Stay <span>Local</span></h1>
+    <p><strong>EnigmAgent</strong> is a local encrypted vault that resolves <code>{{PLACEHOLDER}}</code> secrets at runtime — so LLMs never see real API keys. AES-256-GCM + Argon2id. Zero cloud. Works with Claude, Cursor, Continue.dev, Cline, Open WebUI.</p>
+    <div class="cta-group">
+      <a href="https://github.com/Agnuxo1/EnigmAgent" class="btn btn-primary">⚡ Get Started</a>
+      <a href="#features" class="btn btn-secondary">🔐 How It Works</a>
+    </div>
+  </div>
+</section>
+
+<section class="features" id="features">
+  <div class="section-header">
+    <h2>Why EnigmAgent?</h2>
+    <p>Security should be invisible, not inconvenient.</p>
+  </div>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">🔒</div>
+      <h3>Zero-Cloud Architecture</h3>
+      <p>Everything stays on your machine. The vault file never leaves your filesystem. No servers, no accounts, no data collection.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🛡️</div>
+      <h3>Military-Grade Encryption</h3>
+      <p>AES-256-GCM for data at rest. Argon2id for key derivation. Your secrets are as safe as your OS.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🎭</div>
+      <h3>LLM-Never-Sees Pattern</h3>
+      <p>Agents only see <code>{{OPENAI_KEY}}</code>, never the real key. Resolution happens at the HTTP boundary, not in context.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔌</div>
+      <h3>Universal Integration</h3>
+      <p>MCP server for Claude Desktop. VS Code extension. CLI tool. Integrations for LangChain, LlamaIndex, CrewAI, n8n.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📱</div>
+      <h3>One-Command Setup</h3>
+      <p><code>npx enigmagent-mcp</code> and you're running. Or install the VS Code extension. Or just use the CLI.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔓</div>
+      <h3>Open Source & Auditable</h3>
+      <p>MIT licensed. Read the code. Audit the crypto. No black boxes. Trust through transparency.</p>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <p style="color:var(--dim);margin-bottom:1rem;font-size:.875rem">// Agent prompt — the LLM sees this:</p>
+    <code>curl -H "Authorization: Bearer {{OPENAI_KEY}}" https://api.openai.com/v1/chat/completions</code>
+    <p style="color:var(--dim);margin-top:1rem;margin-bottom:.5rem;font-size:.875rem">// EnigmAgent resolves at runtime — the real key never enters the LLM context:</p>
+    <code>curl -H "Authorization: Bearer sk-abc123..." https://api.openai.com/v1/chat/completions</code>
+  </div>
+</section>
+
+<section class="ecosystem">
+  <div class="section-header">
+    <h2>Part of P2PCLAW</h2>
+    <p>EnigmAgent is one agent in a decentralized network of 14 autonomous research agents.</p>
+  </div>
+  <div class="eco-grid">
+    <a href="https://p2pclaw.com" class="eco-item"><div class="eco-emoji">🦀</div><div class="eco-name">P2PCLAW</div></a>
+    <a href="https://github.com/Agnuxo1/CognitionBoard" class="eco-item"><div class="eco-emoji">🧠</div><div class="eco-name">CognitionBoard</div></a>
+    <a href="https://github.com/Agnuxo1/benchclaw" class="eco-item"><div class="eco-emoji">📊</div><div class="eco-name">BenchClaw</div></a>
+    <a href="https://github.com/Agnuxo1/paperclaw-extension" class="eco-item"><div class="eco-emoji">📄</div><div class="eco-name">PaperClaw</div></a>
+    <a href="https://agentboot.pages.dev" class="eco-item"><div class="eco-emoji">🖥️</div><div class="eco-name">AgentBoot</div></a>
+  </div>
+</section>
+
+<footer>
+  <p><strong>EnigmAgent</strong> — <a href="https://github.com/Agnuxo1/EnigmAgent">GitHub</a> · <a href="https://p2pclaw.com">P2PCLAW</a></p>
+  <p style="margin-top:.5rem;opacity:.6">Created by Francisco Angulo de Lafuente (Agnuxo1) · MIT License</p>
+</footer>
+
+</body>
+</html>
