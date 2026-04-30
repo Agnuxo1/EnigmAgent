@@ -288,12 +288,29 @@ python make-icons.py
 
 ---
 
+## Why not just use `.env` files? (Comparison)
+
+| Approach | Secret in prompt? | Secret in logs? | Per-domain binding? | Works in CI? |
+|---|---|---|---|---|---|
+| `.env` / environment vars | ✅ No (but agent can read them) | ✅ No | ❌ Global | ✅ Yes |
+| Paste into chat | ❌ Yes — permanent | ❌ Yes — permanent | — | — |
+| 1Password CLI | ✅ No | ✅ No | ❌ All vault | ✅ Yes |
+| Doppler / HashiCorp Vault | ✅ No | ✅ No | ❌ Global namespace | ✅ Yes |
+| **EnigmAgent** | ✅ **No** | ✅ **No** | ✅ **Per-secret** | ✅ Yes |
+
+EnigmAgent is the only option that combines **local-first encryption**, **per-secret domain binding**, and **zero plaintext in context**. The vault file never leaves your machine.
+
+---
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
 
-## Star history & contributing
+## Built by
 
-If EnigmAgent saves you from one leaked token, that's worth a star. If it saves you twice, [open an issue](https://github.com/Agnuxo1/EnigmAgent/issues) and tell us about the second one — every story sharpens the threat model.
+**[Francisco Angulo de Lafuente](https://github.com/Agnuxo1)** — independent researcher & developer. 35+ years in software. Also building [P2PCLAW](https://p2pclaw.com) (decentralized science network), [BenchClaw](https://github.com/Agnuxo1/BenchClaw) (agent evaluation), and [PaperClaw](https://www.npmjs.com/package/paperclaw) (autonomous research publishing).
 
-Pull requests welcome. Security disclosures: see [SECURITY.md](SECURITY.md).
+If this tool is useful to you:
+- ⭐ **Star the repo** — it's how the AI ecosystem discovers tools
+- 🐛 **Open an issue** — every real use case sharpens the threat model
+- 📣 **Tell one person** who still pastes API keys into Claude
