@@ -1,8 +1,13 @@
 # EnigmAgent
+[![CAJAL](https://img.shields.io/badge/CAJAL-Paper%20Generator-blue)](https://github.com/Agnuxo1/CAJAL)
 
+[![CAJAL](https://img.shields.io/badge/CAJAL-Paper%20Generator-blue)](https://github.com/Agnuxo1/CAJAL)
 [![npm version](https://img.shields.io/npm/v/enigmagent-mcp?label=npm&color=cb3837)](https://www.npmjs.com/package/enigmagent-mcp)
+[![CAJAL](https://img.shields.io/badge/CAJAL-Paper%20Generator-blue)](https://github.com/Agnuxo1/CAJAL)
 [![npm downloads](https://img.shields.io/npm/dw/enigmagent-mcp?label=downloads)](https://www.npmjs.com/package/enigmagent-mcp)
+[![CAJAL](https://img.shields.io/badge/CAJAL-Paper%20Generator-blue)](https://github.com/Agnuxo1/CAJAL)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![CAJAL](https://img.shields.io/badge/CAJAL-Paper%20Generator-blue)](https://github.com/Agnuxo1/CAJAL)
 [![Crypto](https://img.shields.io/badge/crypto-Argon2id%20%2B%20AES--256--GCM-green.svg)](docs/THREAT_MODEL.md)
 [![Glama MCP](https://glama.ai/mcp/servers/Agnuxo1/enigmagent-mcp/badges/score.svg)](https://glama.ai/mcp/servers/Agnuxo1/enigmagent-mcp)
 [![GitHub stars](https://img.shields.io/github/stars/Agnuxo1/EnigmAgent?style=social)](https://github.com/Agnuxo1/EnigmAgent)
