@@ -1,16 +1,12 @@
 # EnigmAgent
-[![CAJAL](https://img.shields.io/badge/CAJAL-Paper%20Generator-blue)](https://github.com/Agnuxo1/CAJAL)
 
-[![CAJAL](https://img.shields.io/badge/CAJAL-Paper%20Generator-blue)](https://github.com/Agnuxo1/CAJAL)
 [![npm version](https://img.shields.io/npm/v/enigmagent-mcp?label=npm&color=cb3837)](https://www.npmjs.com/package/enigmagent-mcp)
-[![CAJAL](https://img.shields.io/badge/CAJAL-Paper%20Generator-blue)](https://github.com/Agnuxo1/CAJAL)
 [![npm downloads](https://img.shields.io/npm/dw/enigmagent-mcp?label=downloads)](https://www.npmjs.com/package/enigmagent-mcp)
-[![CAJAL](https://img.shields.io/badge/CAJAL-Paper%20Generator-blue)](https://github.com/Agnuxo1/CAJAL)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![CAJAL](https://img.shields.io/badge/CAJAL-Paper%20Generator-blue)](https://github.com/Agnuxo1/CAJAL)
 [![Crypto](https://img.shields.io/badge/crypto-Argon2id%20%2B%20AES--256--GCM-green.svg)](docs/THREAT_MODEL.md)
 [![Glama MCP](https://glama.ai/mcp/servers/Agnuxo1/enigmagent-mcp/badges/score.svg)](https://glama.ai/mcp/servers/Agnuxo1/enigmagent-mcp)
 [![GitHub stars](https://img.shields.io/github/stars/Agnuxo1/EnigmAgent?style=social)](https://github.com/Agnuxo1/EnigmAgent)
+[![OpenCLAW-P2P](https://img.shields.io/badge/ecosystem-OpenCLAW--P2P-2ea44f)](https://github.com/Agnuxo1/OpenCLAW-P2P)
 
 **Integrations:** [![n8n-nodes-enigmagent](https://img.shields.io/npm/v/n8n-nodes-enigmagent?label=n8n%20node&color=ea4b71)](https://www.npmjs.com/package/n8n-nodes-enigmagent) · [![langchain-enigmagent](https://img.shields.io/pypi/v/langchain-enigmagent?label=langchain&color=1c3c3c)](https://pypi.org/project/langchain-enigmagent/) · [![llama-index-tools-enigmagent](https://img.shields.io/pypi/v/llama-index-tools-enigmagent?label=llamaindex&color=00d4aa)](https://pypi.org/project/llama-index-tools-enigmagent/) · [![crewai-tools-enigmagent](https://img.shields.io/pypi/v/crewai-tools-enigmagent?label=crewai&color=ff5a1f)](https://pypi.org/project/crewai-tools-enigmagent/) · [Claude Desktop](INTEGRATIONS.md#claude-desktop) · [Cursor](INTEGRATIONS.md#cursor) · [Continue.dev](INTEGRATIONS.md#continuedev) · [Cline](INTEGRATIONS.md#cline-vs-code) · [Open WebUI](INTEGRATIONS.md#open-webui) · [more →](INTEGRATIONS.md)
 
