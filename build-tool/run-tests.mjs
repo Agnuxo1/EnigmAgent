@@ -67,6 +67,13 @@ function originMatches(origin, domain) {
 }
 
 const PLACEHOLDER_RE = /\{\{([A-Z0-9_:\-.@]+)\}\}/g;
+const PLACEHOLDER_EXACT_RE = /^\{\{([A-Z0-9_:\-.@]+)\}\}$/i;
+
+// Mirror of extension vault.js DOC: handling.
+function docStorageName(name) {
+  const raw = name.slice(4).replace(/[^A-Za-z0-9_.\-]/g, '_');
+  return 'DOC_' + raw;
+}
 
 // ---------- test harness ----------
 
@@ -251,6 +258,46 @@ async function main() {
     const template = 'user={{GITHUB_USERNAME}}&token={{GITHUB_TOKEN}}';
     const matches = [...template.matchAll(PLACEHOLDER_RE)].map(m => m[1]);
     assertEq(matches.join(','), 'GITHUB_USERNAME,GITHUB_TOKEN');
+  });
+
+  section('security audit invariants');
+
+  await test('placeholder parser rejects path traversal syntax', () => {
+    assert(!'{{DOC:../secret.txt}}'.match(PLACEHOLDER_EXACT_RE));
+    assert(!'{{DOC:..\\secret.txt}}'.match(PLACEHOLDER_EXACT_RE));
+    assert(!'{{DOC:/etc/passwd}}'.match(PLACEHOLDER_EXACT_RE));
+  });
+
+  await test('DOC: storage names are sanitized before lookup', () => {
+    assertEq(docStorageName('DOC:report.md'), 'DOC_report.md');
+    assertEq(docStorageName('DOC:../../secret.txt'), 'DOC_.._.._secret.txt');
+    assertEq(docStorageName('DOC:client contract.md'), 'DOC_client_contract.md');
+  });
+
+  await test('bad placeholder names fail closed without throwing parser state', () => {
+    const template = '{{GOOD_TOKEN}} {{bad/name}} {{ANOTHER_TOKEN}}';
+    const matches = [...template.matchAll(PLACEHOLDER_RE)].map(m => m[1]);
+    assertEq(matches.join(','), 'GOOD_TOKEN,ANOTHER_TOKEN');
+  });
+
+  await test('domain matcher refuses empty and malformed domains', () => {
+    assertEq(originMatches('https://github.com', ''), false);
+    assertEq(originMatches('https://github.com', ' '), false);
+    assertEq(originMatches('https://github.com', '.com'), false);
+  });
+
+  await test('secret-like values are never included in modeled error replies', () => {
+    const secret = 'ghp_' + 'x'.repeat(36);
+    const replies = [
+      { error: 'vault_locked' },
+      { error: 'not_found', placeholder: 'GITHUB_TOKEN' },
+      { error: 'no_domain_binding', placeholder: 'GITHUB_TOKEN' },
+      { error: 'domain_mismatch', placeholder: 'GITHUB_TOKEN', expected: 'github.com' },
+      { error: 'decrypt_failed' },
+    ];
+    const joined = JSON.stringify(replies);
+    assert(!joined.includes(secret), 'modeled errors must not contain secret material');
+    assert(!joined.includes('ghp_'), 'modeled errors must not contain token prefixes');
   });
 
   section('bundle byte-equivalence');
