@@ -14,7 +14,9 @@
 
 EnigmAgent is option four.
 
-Your AI agent types `{{GITHUB_TOKEN}}`. The placeholder leaves the model and travels through the conversation, the logs, the context window — and only at the moment your tool actually needs the credential does EnigmAgent intercept the call, decrypt the real token locally with AES-256-GCM, and inject it. The plaintext exists for one event-loop tick. The model never sees it. The provider never sees it. Your terminal scrollback never sees it.
+EnigmAgent provides encrypted local credential storage and placeholder-based workflows. Whether a secret reaches the model depends on the integration: browser form substitution and raw MCP resolution have different trust boundaries. JavaScript does not guarantee that plaintext exists for only one event-loop tick.
+
+> **Important:** the bundled [`platforms/mcp-server/index.js`](platforms/mcp-server/index.js) implements `enigmagent_resolve` by returning the decrypted value as MCP text. A model-connected client can expose that result to the model, conversation history or logs. Do not use this raw resolver when your requirement is to keep credentials out of model context. Independently verify the exact version and tool surface of separately distributed packages.
 
 ```bash
 npx enigmagent-mcp --vault ./my.vault.json
@@ -45,7 +47,7 @@ Restart Claude Desktop. Two new tools appear: `enigmagent_resolve` and `enigmage
 
 > *"List my vault entries, then call my GitHub API with `{{GITHUB_TOKEN}}` in the Authorization header."*
 
-The real token never enters the conversation. Same pattern works for [Cursor](#cursor) and [Continue.dev](#continuedev) below.
+Listing names does not return values, but calling the bundled `enigmagent_resolve` does. The setup above is not evidence of context isolation. Use only test credentials until the chosen package and client have been checked for the required trust boundary.
 
 ---
 
@@ -59,7 +61,7 @@ When you use an AI agent — Claude, ChatGPT, Cursor, a browser automation tool 
 | Give the agent a long-lived token | The agent can act with full permissions, in any future session |
 | Don't use agents for sensitive tasks | You lose most of the value |
 
-**EnigmAgent is option D.** The agent only ever types `{{GITHUB_TOKEN}}`. The real value never appears in the conversation, in logs, or in the agent's memory.
+**EnigmAgent offers a placeholder workflow**, not a universal no-disclosure guarantee. A trusted execution adapter must perform the authenticated operation outside the model and avoid returning credentials. A raw resolver is not such an adapter.
 
 ---
 
@@ -86,13 +88,13 @@ When you use an AI agent — Claude, ChatGPT, Cursor, a browser automation tool 
                                               └───────────────────────┘
 ```
 
-The plaintext value exists in memory for approximately one event-loop tick. It is never written to the clipboard, never logged, and never visible to any other tab, script, or LLM context.
+This diagram describes the intended substitution workflow, not the raw MCP resolver. During browser substitution, plaintext is accessible to scripts with access to the destination input. Event handlers, extensions and the destination application can observe or retain it. Memory lifetime is not guaranteed by JavaScript garbage collection.
 
 ---
 
 ## Install paths
 
-### MCP server (recommended for AI agents)
+### MCP server (check the tool's disclosure behavior)
 
 ```bash
 npx enigmagent-mcp --vault ./my.vault.json     # MCP stdio for Claude/Cursor/etc.
@@ -291,15 +293,12 @@ python make-icons.py
 
 ## Why not just use `.env` files? (Comparison)
 
-| Approach | Secret in prompt? | Secret in logs? | Per-domain binding? | Works in CI? |
-|---|---|---|---|---|---|
-| `.env` / environment vars | ✅ No (but agent can read them) | ✅ No | ❌ Global | ✅ Yes |
-| Paste into chat | ❌ Yes — permanent | ❌ Yes — permanent | — | — |
-| 1Password CLI | ✅ No | ✅ No | ❌ All vault | ✅ Yes |
-| Doppler / HashiCorp Vault | ✅ No | ✅ No | ❌ Global namespace | ✅ Yes |
-| **EnigmAgent** | ✅ **No** | ✅ **No** | ✅ **Per-secret** | ✅ Yes |
-
-EnigmAgent is the only option that combines **local-first encryption**, **per-secret domain binding**, and **zero plaintext in context**. The vault file never leaves your machine.
+Encrypted storage protects a different boundary from model-context isolation.
+Environment variables, secret managers and EnigmAgent all require careful
+control of the process that reads a credential and where its output is sent.
+Do not infer that a tool keeps secrets out of logs merely because its input
+uses placeholders. This repository does not establish exclusive capabilities
+or a security comparison against other secret-management products.
 
 ---
 
