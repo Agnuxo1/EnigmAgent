@@ -1,16 +1,29 @@
 # Threat Model
 
+## Scope and component boundaries
+
+The browser substitution flow and the bundled MCP/REST resolver are not
+interchangeable. In `platforms/mcp-server/index.js`, `enigmagent_resolve` returns
+`content: [{ type: 'text', text: value }]`; REST `/resolve` also returns the
+resolved value to its caller. Domain matching does not prevent that caller
+from forwarding or logging the value. Do not connect a raw resolver to a model
+when context isolation is required. This observation is based on source review,
+not a test using real credentials or a complete security audit.
+
+Separately published packages and adapters may have different behavior. Verify
+their exact versions rather than transferring guarantees between components.
+
 ## What EnigmAgent defends against
 
 | Threat | Defense |
 |---|---|
-| LLM provider logs or trains on your secret | The agent only ever sees a placeholder name. The real value is substituted inside the DOM by the extension at the exact moment of submit. |
-| Chat history leaks your secret | Same — there is no real value in the chat. |
-| Stolen vault file | AES-256-GCM with a key derived by Argon2id (64 MiB, 3 passes). Brute-forcing an 8-character password over a stolen vault costs ~10⁸ × 800 ms ≈ 2 500 CPU-years. Stronger passwords make it worse. |
+| LLM provider logs or trains on your secret | Browser substitution can avoid typing a secret into a prompt, but this does not cover raw MCP resolution, page scripts, client logs or tool responses. |
+| Chat history leaks your secret | Depends on the complete integration. A raw resolver result can enter history. |
+| Stolen vault file | AES-256-GCM with an Argon2id-derived key raises the cost of offline guesses. The previous numerical estimate was incorrect: 100 million guesses at 800 ms each is about 2.54 serial years, not 2,500. That hypothetical rate is not a measured attack cost, and password length alone does not determine entropy. |
 | Rogue site tricking the agent into pasting a token | Every secret is pinned to a domain. The bridge refuses to resolve on mismatched origins; a phishing site at `g1thub.com` gets `domain_mismatch` back. |
 | Clipboard sniffers / paste loggers | The plaintext is written directly to the input's `value` property via the native setter — never to `navigator.clipboard`. |
-| A second tab reading the plaintext | The decrypt happens inside the vault tab (extension origin). Only the content script in the target page receives the value, through a direct message channel. Other tabs never see it. |
-| Agent trying to exfiltrate the value by pasting it into the chat | The agent receives a *success* signal, not the value. It never sees the plaintext, so it cannot repeat it. |
+| A second tab reading the plaintext | Extension isolation separates ordinary origins, but destination-page scripts and privileged extensions can read injected values. There is no universal protection against those observers. |
+| Agent trying to exfiltrate the value by pasting it into the chat | A correctly isolated execution adapter must not return credentials. The bundled raw MCP resolver does return them and is unsuitable for this requirement. |
 
 ## What EnigmAgent does NOT defend against
 
@@ -28,7 +41,7 @@
 
 ### Brief plaintext exposure in DOM
 
-During the submit-time swap, the real value is present in `<input>.value` for about one event-loop tick before the form submits. A sufficiently fast content script from *another* extension running on the same page could read it. This is the fundamental cost of automating form fill; the alternative is manual typing. Mitigations:
+During the submit-time swap, the real value is present in `<input>.value`. Destination-page event handlers and other extensions with page access can read it synchronously; they do not need to win a timing race. JavaScript does not guarantee erasure after one event-loop tick. Treat the destination page as a credential recipient. Mitigations:
 
 - Write via the native setter + dispatch `input`/`change` once — no extra observability window.
 - Re-submit immediately with `form.requestSubmit()`.
