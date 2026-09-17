@@ -1,0 +1,39 @@
+name: Integrated release verification
+
+on:
+  push:
+    branches: [release/integrated-vault-2026-09-17]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: integrated-release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source-environment:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install the locked public gateway dependency without scripts
+        run: npm ci --prefix platforms/mcp-server --ignore-scripts --no-audit --no-fund
+      - name: Run the existing release tests
+        run: npm test --prefix platforms/mcp-server
+      - name: Export public source and its locked test dependency
+        run: |
+          mkdir -p /tmp/enigmagent-verification
+          git archive --format=tar HEAD | tar -xf - -C /tmp/enigmagent-verification
+          cp -a platforms/mcp-server/node_modules /tmp/enigmagent-verification/platforms/mcp-server/
+          tar -czf /tmp/enigmagent-verification.tar.gz -C /tmp/enigmagent-verification .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: source-test-environment
+          path: /tmp/enigmagent-verification.tar.gz
+          retention-days: 1
+          if-no-files-found: error
