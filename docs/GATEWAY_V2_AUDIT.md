@@ -90,6 +90,12 @@ of building this checkout. That distribution is a separate, unresolved release
 gate. Do not attribute these source fixes to an existing Docker image. No
 production service or personal MCP configuration was changed in this milestone.
 
+A `[source-only]` merge-commit marker now suppresses only automatic Docker
+publication. The dedicated gateway tests are not skipped. Manual Docker workflow
+dispatch remains available to the maintainer. The marker separates a reviewed
+source change from the unresolved npm-latest container distribution; it does not
+claim to fix or publish that container.
+
 ## Remaining risks and next bounded milestones
 
 1. **Vault persistence and integrity.** Design a versioned migration for

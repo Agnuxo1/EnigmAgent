@@ -11,6 +11,9 @@ on:
 jobs:
   docker:
     name: Build & push agnuxo1/enigmagent
+    # Source-only changes must not republish the unrelated npm-latest image.
+    # This gate skips publication only; dedicated gateway CI still runs.
+    if: ${{ github.event_name == 'workflow_dispatch' || !contains(github.event.head_commit.message, '[source-only]') }}
     runs-on: ubuntu-latest
 
     steps:
