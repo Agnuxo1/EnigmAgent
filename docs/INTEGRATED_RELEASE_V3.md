@@ -139,8 +139,9 @@ with access to the broker remains outside the tested trust boundary.
 
 `npm test` discovers the complete Node test suite rather than a hard-coded subset.
 `tests/verify-package.mjs` checks the gateway manifest. `scripts/package-node.py`
-builds all four Node archives, checks source equivalence and installs them in a
-fresh environment. `scripts/verify-python-package.py` checks wheel source files
+builds all four Node archives, checks source equivalence, resolves a fresh lockfile
+with network access, then performs the actual installation offline into an empty
+node_modules directory. This does not claim an air-gapped dependency bundle. `scripts/verify-python-package.py` checks wheel source files
 and performs a clean offline installation. `scripts/test-container.py` starts the
 actual image with synthetic credentials and verifies authentication, default raw
 denial, version, host-only port publishing and non-root image configuration.

@@ -60,15 +60,27 @@
     "platforms/python-sdk/enigmagent/adapters/llamaindex.py": "3a2a5ee9736ad342c6fc0169cd674ce1f5943e3b833fc9f0a25928334db48c01",
     "platforms/python-sdk/enigmagent/adapters/pydantic_ai.py": "7fd8f640675aaa3e36af385da9d34b64bf3372acbf49bcc9a5293c486bdae8ff",
     "platforms/python-sdk/enigmagent/adapters/smolagents.py": "ac94dcafdae3799b89b806c8cac15a40e3f454adf3b5d058bdb97e2969a5b558",
-    "platforms/python-sdk/enigmagent/client.py": "bb0cd5cbbd6ae0459f06d0a66ec55f7c6baebf9b8f5ceb02d526bc5bc7fe9e39",
+    "platforms/python-sdk/enigmagent/client.py": "086cfcda5f2e19d5fa333aff85d881f95594536cc0024148828b14e923129286",
     "platforms/python-sdk/tests/test_client.py": "c6505a93b4c8633725621370d7b4a2efe743d41331c453bd04c5155d8cf34b0b",
     "platforms/python-sdk/tests/test_mcp_interoperability.py": "ca486744a56956604cd77816b2caaf814e941339e1d01dcdda1cc187c5057c79",
     "platforms/python-sdk/tests/test_native_integrations.py": "60b07774e03c9542f1f1d6c0d4aad1c9eb116450bdfcde881c915fab05d8f5d3",
     "platforms/shared/vault-core.js": "1767aa88decd614a573ed037de2420513bae49896b0808aa78329580c928500e",
     "scripts/collect-release.py": "837234d3f12a11c24c6e62318a9094287395974839f0a95005efb3afd696deec",
-    "scripts/package-node.py": "442d7ac8d9e715985d2d724a0eadb1ff36efa3b0dbc2854c5f5146f36bdb4844",
+    "scripts/package-node.py": "93eb5553bbbdc75795e82d0f0a48c5e934d1e9f5f5cb1f3d086900ed81484b0c",
     "scripts/run-python-tests.py": "9c574389c9f5c28e75ea6409f0ab03a265674f1dffa89823712589e1d49acd4e",
     "scripts/test-container.py": "1558968fc0643b20baae670fc82cf867f688c03b58289f78501ef992cbdcdd65",
     "scripts/verify-python-package.py": "6feb92535a4bb021c3510264e511f269c07755368e7e51b4d509dfaf9e52520f"
-  }
+  },
+  "ci_corrections": [
+    {
+      "issue": "Fresh Linux npm cache lacked registry metadata for an offline unpinned installation",
+      "fix": "Resolve a fresh lockfile with network access, assert node_modules is absent, then perform npm ci offline",
+      "local_reverification": "All four standalone distributions passed the clean offline install"
+    },
+    {
+      "issue": "POSIX timer shutdown could yield partial parsed response headers and classify a timeout as invalid_response",
+      "fix": "Check the absolute deadline immediately after parsing response headers",
+      "local_reverification": "All 37 client transport regressions passed on Windows; Linux CI remains required"
+    }
+  ]
 }

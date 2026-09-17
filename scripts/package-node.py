@@ -37,8 +37,15 @@ def main():
     with tempfile.TemporaryDirectory(prefix="enigmagent-node-package-") as temporary:
         folder = Path(temporary)
         (folder / "package.json").write_text('{"private":true,"type":"module"}\n', encoding="utf-8")
-        subprocess.run([node, str(npm), "install", "--offline", "--ignore-scripts", "--no-audit", "--no-fund",
+        # Resolve a lockfile while network access is allowed. A new runner has
+        # cached locked tarballs, but not necessarily the registry metadata needed
+        # by an unpinned install. The actual installation remains offline and starts
+        # with no node_modules directory; no developer-machine cache is assumed.
+        subprocess.run([node, str(npm), "install", "--package-lock-only", "--ignore-scripts", "--no-audit", "--no-fund",
                         *map(str, archives)], cwd=folder, check=True)
+        assert not (folder / "node_modules").exists()
+        subprocess.run([node, str(npm), "ci", "--offline", "--ignore-scripts", "--no-audit", "--no-fund"],
+                       cwd=folder, check=True)
         probe = folder / "probe.mjs"
         probe.write_text("""import assert from 'node:assert/strict';
 import { VaultManager, MemoryStorage } from '@enigmagent/vault';
@@ -60,7 +67,7 @@ console.log('Clean installed vault, core and broker client passed');
             result = subprocess.run([node, str(folder / "node_modules" / executable), "--version"],
                 cwd=folder, check=True, capture_output=True, text=True)
             assert result.stdout.strip() == "3.0.0"
-    result = {"version": "3.0.0", "clean_install_verified": True, "registry_publication": False, "packages": reports}
+    result = {"version": "3.0.0", "clean_install_verified": True, "dependency_resolution_network_allowed": True, "installation_offline": True, "registry_publication": False, "packages": reports}
     (root / "audit/node-package-evidence.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(result))
 

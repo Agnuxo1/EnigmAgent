@@ -174,6 +174,11 @@ class VaultClient:
                 headers["Content-Type"] = "application/json"
             connection.request("GET" if payload is None else "POST", path, body=body, headers=headers)
             response = connection.getresponse()
+            # On POSIX, timer-triggered socket shutdown can make the header parser
+            # return a partial response instead of raising a socket exception.
+            # Check the absolute deadline before interpreting incomplete headers.
+            if expired.is_set() or time.monotonic() >= deadline:
+                raise VaultError("timeout")
             if 300 <= response.status < 400:
                 raise VaultError("redirect_not_allowed")
             content_type = response.getheader("Content-Type", "").split(";", 1)[0].strip().lower()

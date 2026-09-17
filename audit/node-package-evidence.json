@@ -1,6 +1,8 @@
 {
   "version": "3.0.0",
   "clean_install_verified": true,
+  "dependency_resolution_network_allowed": true,
+  "installation_offline": true,
   "registry_publication": false,
   "packages": [
     {
