@@ -1,3 +1,21 @@
+## Bundled gateway 2.0.0 - 2026-09-17
+
+Scope: `platforms/mcp-server`, not a synchronized release of every platform.
+
+- Require bearer authentication on every loopback REST endpoint.
+- Disable raw-secret resolution by default for MCP and REST; require operator opt-in.
+- Validate local Host, reject browser Origin, bound incoming bodies and stdio frames.
+- Handle invalid JSON-RPC input and notifications without crashing or exposing exception details.
+- Add a loopback-only authenticated Node client and a no-credential encrypted-vault demo.
+- Add actual HTTP/stdio and CLI regression tests, packaging checks and cross-platform CI.
+- Preserve all 325 pre-change tracked files in a verified versioned source archive.
+- Document ten integration candidates without claiming upstream adoption.
+
+Breaking changes: Node.js 22+, non-interactive credentials, REST bearer token and
+raw-resolution opt-in. The v1 encrypted-vault format remains unchanged.
+Registry and Docker publication are not performed by this source change.
+See `docs/GATEWAY_V2_AUDIT.md` for remaining project-wide security work.
+
 # Changelog
 
 All notable changes to EnigmAgent are documented in this file.

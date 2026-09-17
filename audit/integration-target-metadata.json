@@ -1,0 +1,122 @@
+[
+  {
+    "repository": "langchain-ai/langchain",
+    "url": "https://github.com/langchain-ai/langchain",
+    "default_branch": "master",
+    "archived": false,
+    "license_spdx": "MIT",
+    "stars_snapshot": 146491,
+    "pushed_at": "2026-09-16T19:58:47Z",
+    "retrieved_on": "2026-09-17",
+    "status": "candidate_only_not_an_adoption_or_contact",
+    "license_review": "Metadata only; inspect exact LICENSE/NOTICE and contribution terms before distributing an adapter or submitting upstream"
+  },
+  {
+    "repository": "langchain-ai/langgraph",
+    "url": "https://github.com/langchain-ai/langgraph",
+    "default_branch": "main",
+    "archived": false,
+    "license_spdx": "MIT",
+    "stars_snapshot": 41799,
+    "pushed_at": "2026-09-17T02:12:42Z",
+    "retrieved_on": "2026-09-17",
+    "status": "candidate_only_not_an_adoption_or_contact",
+    "license_review": "Metadata only; inspect exact LICENSE/NOTICE and contribution terms before distributing an adapter or submitting upstream"
+  },
+  {
+    "repository": "run-llama/llama_index",
+    "url": "https://github.com/run-llama/llama_index",
+    "default_branch": "main",
+    "archived": false,
+    "license_spdx": "MIT",
+    "stars_snapshot": 52195,
+    "pushed_at": "2026-09-15T23:21:17Z",
+    "retrieved_on": "2026-09-17",
+    "status": "candidate_only_not_an_adoption_or_contact",
+    "license_review": "Metadata only; inspect exact LICENSE/NOTICE and contribution terms before distributing an adapter or submitting upstream"
+  },
+  {
+    "repository": "crewAIInc/crewAI",
+    "url": "https://github.com/crewAIInc/crewAI",
+    "default_branch": "main",
+    "archived": false,
+    "license_spdx": "MIT",
+    "stars_snapshot": 58675,
+    "pushed_at": "2026-09-17T07:14:06Z",
+    "retrieved_on": "2026-09-17",
+    "status": "candidate_only_not_an_adoption_or_contact",
+    "license_review": "Metadata only; inspect exact LICENSE/NOTICE and contribution terms before distributing an adapter or submitting upstream"
+  },
+  {
+    "repository": "deepset-ai/haystack",
+    "url": "https://github.com/deepset-ai/haystack",
+    "default_branch": "main",
+    "archived": false,
+    "license_spdx": "Apache-2.0",
+    "stars_snapshot": 26526,
+    "pushed_at": "2026-09-16T22:36:29Z",
+    "retrieved_on": "2026-09-17",
+    "status": "candidate_only_not_an_adoption_or_contact",
+    "license_review": "Metadata only; inspect exact LICENSE/NOTICE and contribution terms before distributing an adapter or submitting upstream"
+  },
+  {
+    "repository": "microsoft/agent-framework",
+    "url": "https://github.com/microsoft/agent-framework",
+    "default_branch": "main",
+    "archived": false,
+    "license_spdx": "MIT",
+    "stars_snapshot": 13556,
+    "pushed_at": "2026-09-17T04:56:41Z",
+    "retrieved_on": "2026-09-17",
+    "status": "candidate_only_not_an_adoption_or_contact",
+    "license_review": "Metadata only; inspect exact LICENSE/NOTICE and contribution terms before distributing an adapter or submitting upstream"
+  },
+  {
+    "repository": "huggingface/smolagents",
+    "url": "https://github.com/huggingface/smolagents",
+    "default_branch": "main",
+    "archived": false,
+    "license_spdx": "Apache-2.0",
+    "stars_snapshot": 29354,
+    "pushed_at": "2026-08-25T18:36:00Z",
+    "retrieved_on": "2026-09-17",
+    "status": "candidate_only_not_an_adoption_or_contact",
+    "license_review": "Metadata only; inspect exact LICENSE/NOTICE and contribution terms before distributing an adapter or submitting upstream"
+  },
+  {
+    "repository": "agno-agi/agno",
+    "url": "https://github.com/agno-agi/agno",
+    "default_branch": "main",
+    "archived": false,
+    "license_spdx": "Apache-2.0",
+    "stars_snapshot": 42211,
+    "pushed_at": "2026-09-17T07:16:27Z",
+    "retrieved_on": "2026-09-17",
+    "status": "candidate_only_not_an_adoption_or_contact",
+    "license_review": "Metadata only; inspect exact LICENSE/NOTICE and contribution terms before distributing an adapter or submitting upstream"
+  },
+  {
+    "repository": "continuedev/continue",
+    "url": "https://github.com/continuedev/continue",
+    "default_branch": "main",
+    "archived": false,
+    "license_spdx": "Apache-2.0",
+    "stars_snapshot": 35939,
+    "pushed_at": "2026-09-16T12:36:08Z",
+    "retrieved_on": "2026-09-17",
+    "status": "candidate_only_not_an_adoption_or_contact",
+    "license_review": "Metadata only; inspect exact LICENSE/NOTICE and contribution terms before distributing an adapter or submitting upstream"
+  },
+  {
+    "repository": "cline/cline",
+    "url": "https://github.com/cline/cline",
+    "default_branch": "main",
+    "archived": false,
+    "license_spdx": "Apache-2.0",
+    "stars_snapshot": 68484,
+    "pushed_at": "2026-09-17T06:28:41Z",
+    "retrieved_on": "2026-09-17",
+    "status": "candidate_only_not_an_adoption_or_contact",
+    "license_review": "Metadata only; inspect exact LICENSE/NOTICE and contribution terms before distributing an adapter or submitting upstream"
+  }
+]

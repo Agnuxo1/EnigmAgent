@@ -1,3 +1,10 @@
+> **Bundled gateway 2.0.0 - scoped source release (2026-09-17).** The MCP/REST
+> component now defaults to metadata only; REST requires authentication and raw
+> secrets require explicit opt-in. [Run the no-credential demo](platforms/mcp-server/README.md)
+> and inspect the [audit and remaining boundaries](docs/GATEWAY_V2_AUDIT.md).
+> Other platforms and independently published packages are not certified or
+> automatically upgraded by this change. [Previous source preserved](versions/enigmagent-mcp-1.0.0/README.md).
+
 # EnigmAgent
 
 [![npm version](https://img.shields.io/npm/v/enigmagent-mcp?label=npm&color=cb3837)](https://www.npmjs.com/package/enigmagent-mcp)

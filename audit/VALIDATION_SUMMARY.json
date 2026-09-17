@@ -1,0 +1,27 @@
+{
+  "date": "2026-09-17",
+  "baseline_commit": "21e26997219ecb2f3d27a492b4802d1b97a4f13d",
+  "gateway_version": "2.0.0",
+  "windows_runtime": "Node.js 22.18.0",
+  "final_gateway_tests": {
+    "passed": 61,
+    "failed": 0,
+    "skipped": 0,
+    "command": "npm test (platforms/mcp-server)"
+  },
+  "initial_linux_unit_tests": {
+    "passed": 51,
+    "failed": 0,
+    "runtime": "Node.js 22.16.0",
+    "note": "Initial gateway subset; final full cross-platform coverage is recorded by GitHub Actions, not inferred from this subset."
+  },
+  "baseline_build_tool_tests": {
+    "passed": 35,
+    "failed": 0,
+    "note": "Original build-tool suite, not a full browser/platform audit."
+  },
+  "npm_audit_known_advisories": 0,
+  "npm_audit_scope": "Bundled gateway production dependencies only; zero reported advisories does not prove absence of vulnerabilities.",
+  "package_smoke": "package-smoke.json",
+  "ci_status": "Check the actual workflow run for the proposed commit; not assumed by local validation."
+}

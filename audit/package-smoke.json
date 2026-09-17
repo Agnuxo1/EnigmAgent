@@ -1,0 +1,13 @@
+{
+  "date": "2026-09-17",
+  "artifact": "enigmagent-mcp-2.0.0.tgz",
+  "version": "2.0.0",
+  "sha256": "ac1ef597c84aeb4de92a62acf2056fd4a109203d154a6d37c74334fdb69f266e",
+  "bytes": 15155,
+  "installed_into_clean_temporary_directory": true,
+  "installed_cli_version_verified": true,
+  "installed_no_credential_demo_passed": true,
+  "package_exports_verified": true,
+  "published_to_registry": false,
+  "real_credentials_used": false
+}
