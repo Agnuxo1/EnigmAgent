@@ -10,7 +10,7 @@ const packed = JSON.parse(execFileSync(command, args, { encoding: 'utf8',
   shell: !npmCli && process.platform === 'win32' }));
 assert.equal(packed.length, 1);
 const manifest = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
-assert.equal(packed[0].version, '2.0.0');
+assert.equal(packed[0].version, '3.0.0');
 const paths = new Set(packed[0].files.map(file => file.path));
 for (const path of manifest.files) assert(paths.has(path), `Missing package file: ${path}`);
 assert(![...paths].some(path => /^(versions|audit|tests)\//.test(path)), 'Development material leaked into package');

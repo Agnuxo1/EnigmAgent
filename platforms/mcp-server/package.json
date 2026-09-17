@@ -1,6 +1,6 @@
 {
   "name": "enigmagent-mcp",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "mcpName": "io.github.agnuxo1/enigmagent",
   "private": false,
   "files": [
@@ -12,18 +12,21 @@
     "client.js",
     "README.md",
     "LICENSE",
-    "demo.mjs"
+    "demo.mjs",
+    "operation-broker.js",
+    "vault-cli.js"
   ],
-  "description": "Local encrypted vault gateway. Metadata-only MCP by default; authenticated loopback REST and explicit trusted-client raw resolution.",
+  "description": "Authenticated local credential vault with explicit v1 migration, fixed-operation broker, MCP and loopback REST.",
   "type": "module",
   "bin": {
-    "enigmagent-mcp": "./index.js"
+    "enigmagent-mcp": "./index.js",
+    "enigmagent-vault": "./vault-cli.js"
   },
   "scripts": {
     "start": "node index.js",
     "start:rest": "node index.js --mode rest --port 3737",
     "start:mcp": "node index.js --mode mcp",
-    "test": "node --test tests/gateway.test.mjs tests/cli.test.mjs",
+    "test": "node --test",
     "demo": "node demo.mjs",
     "verify:package": "node tests/verify-package.mjs"
   },

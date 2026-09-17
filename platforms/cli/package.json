@@ -1,22 +1,40 @@
 {
   "name": "enigmagent-cli",
-  "version": "0.2.0",
+  "version": "3.0.0",
   "private": false,
-  "description": "EnigmAgent CLI — manage your encrypted vault from the terminal or shell scripts",
+  "description": "EnigmAgent v3 authenticated local vault with explicit migration, atomic persistence and verified source packaging.",
   "type": "module",
   "bin": {
     "enigmagent": "./bin/enigmagent.js"
   },
   "scripts": {
-    "link":  "npm link",
+    "link": "npm link",
     "start": "node bin/enigmagent.js"
   },
   "dependencies": {
     "@noble/hashes": "1.4.0"
   },
-  "engines": { "node": ">=18" },
-  "keywords": ["cli", "vault", "secrets", "encryption", "ai-agents", "enigmagent"],
+  "engines": {
+    "node": ">=22"
+  },
+  "keywords": [
+    "cli",
+    "vault",
+    "secrets",
+    "encryption",
+    "ai-agents",
+    "enigmagent"
+  ],
   "author": "Francisco Angulo de Lafuente <agnuxo1@gmail.com>",
   "license": "MIT",
-  "repository": { "type": "git", "url": "https://github.com/agnuxo1/EnigmAgent" }
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/agnuxo1/EnigmAgent"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    "README.md",
+    "LICENSE"
+  ]
 }

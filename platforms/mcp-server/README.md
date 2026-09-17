@@ -1,147 +1,65 @@
-# EnigmAgent local gateway 2.0.0
+# EnigmAgent gateway 3.0.0
 
-A local encrypted-vault gateway with **metadata-only MCP stdio by default** and a
-separate **authenticated loopback REST API**. Plaintext resolution requires an
-explicit operator flag. This component is not a context-isolating outbound proxy.
+The package includes an MCP stdio server, authenticated REST server, fixed-operation
+broker, trusted Node client, authenticated vault core and interactive administrator.
+Node.js 22+ is required. The runtime source and LICENSE are included in the package.
 
-This is a source release in `Agnuxo1/EnigmAgent`. It does not establish that npm,
-the MCP registry, Docker images, browser extensions or separately maintained
-adapters have been updated. The legacy `server.json` remains a 1.0.0 descriptor,
-not a publication record for this source version.
-
-## Run the no-credential demonstration
-
-Requires Node.js 22 or later. From the repository root:
+## Local source verification
 
 ```sh
-cd platforms/mcp-server
-npm ci --ignore-scripts
-npm run demo
+npm ci --ignore-scripts --no-audit --no-fund
 npm test
+node tests/verify-package.mjs
 ```
 
-The demonstration creates an encrypted vault containing synthetic data in memory,
-starts an authenticated server on a random loopback port, checks metadata access,
-verifies that raw resolution is denied, and shuts down. It does not open any
-personal vault, save a vault to disk or call an external service.
+The `enigmagent-mcp` executable starts the gateway. `enigmagent-vault` manages vaults;
+run its `--help` for create/add/export/migration/recovery operations. No master
+password is read from MCP protocol stdin. Gateway startup requires
+`ENIGMAGENT_USER` and `ENIGMAGENT_PASS`; REST also requires a random
+`ENIGMAGENT_API_TOKEN`. The master password is removed from the process environment
+map after capture, but JavaScript/OS memory erasure is not guaranteed.
 
-## Migration from the bundled 1.0.0 gateway
+## Broker configuration
 
-| Surface | Version 1.0.0 | Version 2.0.0 |
-| --- | --- | --- |
-| MCP raw-secret tool | Enabled by default | Absent by default; direct calls also denied |
-| REST authentication | None | Bearer token required on every endpoint |
-| Browser requests | Origin/Host not checked | Browser Origin rejected; exact local Host required |
-| Request bodies / stdio frames | No application size cap | 16 KiB incoming-message limit |
-| Invalid MCP `null` message | Process exits | JSON-RPC error; next valid request still works |
-| Credentials on startup | Can prompt on protocol stdin | Environment only; no stdin prompts |
-| Node runtime | Manifest allowed 18+ | Requires 22+ |
-| Encrypted vault format | v1 Argon2id/AES-GCM | Unchanged v1 format |
+Pass `--operations` with an operator-owned JSON file containing an array of fixed
+operations. Each entry has `name`, `url` and `secret`; optional fields are `method`
+(GET/HEAD), `header` (one of the documented authentication headers) and `prefix`.
+This configuration is a trusted policy file, not model input. Public IPv4 HTTPS
+is the default egress policy; `--allow-loopback-operations` permits explicitly
+configured 127.0.0.1 HTTP endpoints. The model chooses only an operation name.
 
-Older REST adapters without authentication headers will fail closed. Updating the
-umbrella repository does not migrate those adapters automatically. Test each one
-before production use. Do not restore unauthenticated endpoints for compatibility.
+| Interface | Purpose |
+|---|---|
+| MCP `enigmagent_list` | Sensitive metadata only, never entry values |
+| MCP `enigmagent_operations` | Configured operation names |
+| MCP `enigmagent_execute` | Execute one fixed request; status-only output |
+| REST `GET /status` | Authenticated health and policy metadata |
+| REST `GET /list` | Authenticated entry metadata |
+| REST `GET /operations` | Authenticated operation names |
+| REST `POST /execute` | Authenticated fixed operation |
 
-## Using an existing vault
+Raw `enigmagent_resolve` / `POST /resolve` requires `--allow-raw-resolve`, cannot
+coexist with broker mode and returns plaintext to a trusted caller. It is not a
+model-isolating API. Browser origins are rejected by the machine-to-machine REST
+interface. `--bind 0.0.0.0` is an explicit container option, not the default; publish
+only host loopback. The REST API is not MCP over HTTP.
 
-Supply `ENIGMAGENT_USER` and `ENIGMAGENT_PASS` through the trusted process launcher
-or a protected local secret mechanism. Do not put real values in Git, tickets,
-model prompts, shell-history commands or shared client configuration.
+## Node client
 
-```sh
-node index.js --vault ./enigmagent-vault.json --mode mcp
+```javascript
+import { VaultClient } from 'enigmagent-mcp';
+const client = new VaultClient({ token: process.env.ENIGMAGENT_API_TOKEN });
+const operations = await client.operations();
+const result = await client.execute('check');
 ```
 
-MCP stdout is reserved for newline-delimited JSON-RPC. Operational messages go to
-stderr. The implemented protocol versions are `2025-06-18` and `2024-11-05`;
-this is not a claim of exhaustive support for later protocol revisions.
-An MCP session must initialize and send `notifications/initialized` before tools.
-Only `enigmagent_list` is advertised by default. Names and domains are metadata,
-which may itself be confidential.
+The operator must configure the named operation first. Do not put real connection
+tokens, passwords or credential values into source examples, prompts or logs.
 
-For the separate REST API, also provide a randomly generated
-`ENIGMAGENT_API_TOKEN` containing 32-256 URL-safe characters. For example, a trusted
-Node launcher can generate 32 random bytes with `randomBytes(32).toString('hex')`
-and pass the result through its child environment. Format validation does not
-prove that an operator-selected token has enough entropy.
-
-```sh
-node index.js --vault ./enigmagent-vault.json --mode rest --port 3737
-```
-
-The process binds only to `127.0.0.1`. Port `0` selects an available local port.
-`ENIGMAGENT_VAULT` overrides `--vault`. No remote listen address is exposed.
-The REST interface is **not MCP Streamable HTTP or SSE**.
-
-### Trusted Node client
-
-Use the bundled client from a trusted backend. It has no configurable remote
-host, does not use environment proxy settings, does not follow redirects, and
-places a one-MiB cap and an absolute deadline on responses.
-
-```js
-import { VaultClient } from './client.js';
-
-const client = new VaultClient({
-  token: process.env.ENIGMAGENT_API_TOKEN,
-  port: 3737,
-  timeoutMs: 5000,
-});
-const status = await client.status();
-console.log({ unlocked: status.unlocked, rawResolveEnabled: status.rawResolveEnabled });
-```
-
-The package exports `VaultClient` and `VaultClientError` from `enigmagent-mcp` and
-`enigmagent-mcp/client` when installed from the built 2.0.0 tarball.
-No registry installation instruction is a substitute for checking the installed
-version: `enigmagent-mcp --version`.
-
-### Explicit raw-secret mode
-
-`--allow-raw-resolve` enables the plaintext resolver for the selected transport.
-Do this **only** for a trusted backend that is meant to receive credentials.
-In MCP mode the result may be included in the model context. In REST mode the
-trusted application must keep returned values out of tool messages, logs,
-checkpoints, traces and arbitrary outbound destinations. A caller-supplied origin
-is not proof of who the caller is or where the credential will be used.
-
-| Endpoint | Requirement | Outcome |
-| --- | --- | --- |
-| `GET /status` | Bearer token | Unlock and policy state |
-| `GET /list` | Bearer token; unlocked vault | Selected metadata fields only |
-| `POST /resolve` | Bearer token; unlocked vault; raw flag; JSON body | Plaintext value for a matching binding |
-
-Resolver JSON must contain only string fields `placeholder` and `origin`.
-Origins must use HTTP(S) without URL credentials. The existing vault's domain
-matching rules still apply, including its existing subdomain behavior.
-Browser Origin headers are rejected: this is a machine-to-machine interface.
-No CORS grant is returned. Token authorization covers the entire unlocked vault;
-it is not multi-tenant or per-secret authorization.
-
-## Limits and error handling
-
-REST checks authentication and local Host before vault access. It caps incoming
-bodies at 16 KiB, header size at 8 KiB, open connections at 32 and body-read time
-at five seconds. Responses have `Cache-Control: no-store`. Only allow-listed
-vault error codes reach clients; arbitrary exception text does not.
-
-MCP processes bounded UTF-8 frames sequentially, honors stdout backpressure,
-ignores notifications without executing tools, and rejects malformed envelopes.
-Oversized or incomplete frames end the transport; invalid JSON or `null` yields
-an error without crashing the session. The vault is locked on normal EOF.
-
-## Security boundaries and unfinished project-wide work
-
-This release addresses the bundled gateway, not every EnigmAgent platform.
-It does not protect against a compromised operating system, process, trusted
-launcher, recipient model or authenticated client. Dropping JavaScript references
-is not guaranteed memory erasure. A bearer token is not a user identity system.
-
-The v1 vault core is unchanged. Atomic writes, authenticated entry metadata,
-concurrent writers, stricter schema validation and recovery after partial writes
-still require a separate migration and audit. Do not describe the whole project
-as independently audited or guaranteed to isolate secrets from models.
-
-See [the scoped audit](../../docs/GATEWAY_V2_AUDIT.md),
-[the integration plan](../../docs/GATEWAY_V2_INTEGRATION_PLAN.md), and
-[the preserved previous version](../../versions/enigmagent-mcp-1.0.0/README.md).
+New vaults use authenticated format v2. Legacy v1 vaults are read-only until
+explicit migration; their old domain metadata cannot be retroactively proven
+untampered. Browser v1 exports and Node v2 envelopes are different formats.
+Read `docs/INTEGRATED_RELEASE_V3.md` and `docs/THREAT_MODEL.md` in the source release
+for the full limits, backup/recovery contract and OS process isolation requirements.
+A registry descriptor for an older package version is historical, not publication
+of this v3 build. Tagged GitHub assets and their manifests identify this release.

@@ -1,0 +1,115 @@
+{
+  "synthetic_data_only": true,
+  "native_framework_execution": true,
+  "model_inference_benchmark": false,
+  "upstream_adoption_claimed": false,
+  "frameworks": [
+    {
+      "framework": "langchain",
+      "package": "langchain-core",
+      "version": "1.6.3",
+      "native_class": "langchain_core.tools.structured.StructuredTool",
+      "authorized_operation_status": 200,
+      "unknown_operation": "denied",
+      "inspected_outputs_logs_and_native_state": true,
+      "synthetic_secret_or_broker_token_in_inspected_surfaces": false
+    },
+    {
+      "framework": "langgraph",
+      "package": "langgraph",
+      "version": "1.2.11",
+      "native_class": "langgraph.graph.state.CompiledStateGraph",
+      "authorized_operation_status": 200,
+      "unknown_operation": "denied",
+      "inspected_outputs_logs_and_native_state": true,
+      "synthetic_secret_or_broker_token_in_inspected_surfaces": false
+    },
+    {
+      "framework": "llamaindex",
+      "package": "llama-index-core",
+      "version": "0.14.24",
+      "native_class": "llama_index.core.tools.function_tool.FunctionTool",
+      "authorized_operation_status": 200,
+      "unknown_operation": "denied",
+      "inspected_outputs_logs_and_native_state": true,
+      "synthetic_secret_or_broker_token_in_inspected_surfaces": false
+    },
+    {
+      "framework": "crewai",
+      "package": "crewai",
+      "version": "1.15.22",
+      "native_class": "crewai.tools.base_tool.Tool",
+      "authorized_operation_status": 200,
+      "unknown_operation": "denied",
+      "inspected_outputs_logs_and_native_state": true,
+      "synthetic_secret_or_broker_token_in_inspected_surfaces": false
+    },
+    {
+      "framework": "haystack",
+      "package": "haystack-ai",
+      "version": "3.1.1",
+      "native_class": "enigmagent.adapters.haystack.EnigmAgentOperation",
+      "authorized_operation_status": 200,
+      "unknown_operation": "denied",
+      "inspected_outputs_logs_and_native_state": true,
+      "synthetic_secret_or_broker_token_in_inspected_surfaces": false
+    },
+    {
+      "framework": "agent_framework",
+      "package": "agent-framework-core",
+      "version": "1.18.0",
+      "native_class": "agent_framework._tools.FunctionTool",
+      "authorized_operation_status": 200,
+      "unknown_operation": "denied",
+      "inspected_outputs_logs_and_native_state": true,
+      "synthetic_secret_or_broker_token_in_inspected_surfaces": false
+    },
+    {
+      "framework": "smolagents",
+      "package": "smolagents",
+      "version": "1.26.0",
+      "native_class": "enigmagent.adapters.smolagents.EnigmAgentOperation",
+      "authorized_operation_status": 200,
+      "unknown_operation": "denied",
+      "inspected_outputs_logs_and_native_state": true,
+      "synthetic_secret_or_broker_token_in_inspected_surfaces": false
+    },
+    {
+      "framework": "agno",
+      "package": "agno",
+      "version": "3.0.10",
+      "native_class": "agno.tools.function.Function",
+      "authorized_operation_status": 200,
+      "unknown_operation": "denied",
+      "inspected_outputs_logs_and_native_state": true,
+      "synthetic_secret_or_broker_token_in_inspected_surfaces": false
+    },
+    {
+      "framework": "pydantic_ai",
+      "package": "pydantic-ai-slim",
+      "version": "2.44.0",
+      "native_class": "pydantic_ai.tools.Tool",
+      "authorized_operation_status": 200,
+      "unknown_operation": "denied",
+      "inspected_outputs_logs_and_native_state": true,
+      "synthetic_secret_or_broker_token_in_inspected_surfaces": false
+    },
+    {
+      "framework": "autogen",
+      "package": "autogen-core",
+      "version": "0.7.5",
+      "native_class": "autogen_core.tools._function_tool.FunctionTool",
+      "authorized_operation_status": 200,
+      "unknown_operation": "denied",
+      "inspected_outputs_logs_and_native_state": true,
+      "synthetic_secret_or_broker_token_in_inspected_surfaces": false
+    }
+  ],
+  "destination_counts": {
+    "authorized": 10,
+    "unauthorized": 0,
+    "rawResolveEnabled": false,
+    "vaultFormat": 2
+  },
+  "fixture_exit_code": 0
+}

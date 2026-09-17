@@ -1,171 +1,174 @@
-"""
-Tests for enigmagent.client — uses unittest.mock to avoid requiring a live vault.
-"""
+"""Real loopback transport tests using test-only authentication and synthetic data."""
 from __future__ import annotations
-
+import contextlib
 import json
-import urllib.error
-import urllib.request
-from unittest.mock import MagicMock, patch
-
+import os
+import pickle
+import threading
+import time
+from dataclasses import asdict
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import pytest
+from enigmagent.client import VaultClient, VaultError, configure, get_client, MAX_RESPONSE_BYTES
+TOKEN = "synthetic_" * 8
+SENTINEL = "SYNTHETIC_RESPONSE_VALUE_NOT_A_REAL_SECRET"
 
-from enigmagent.client import (
-    VaultClient,
-    VaultEntry,
-    VaultError,
-    VaultStatus,
-    configure,
-    get_client,
-)
+@contextlib.contextmanager
+def server(handler):
+    class Handler(BaseHTTPRequestHandler):
+        protocol_version = "HTTP/1.1"
+        def do_GET(self): handler(self)
+        def do_POST(self):
+            self.body = self.rfile.read(int(self.headers.get("Content-Length", "0")))
+            handler(self)
+        def log_message(self, *args):
+            return
+    instance = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    instance.daemon_threads = True
+    thread = threading.Thread(target=instance.serve_forever, daemon=True)
+    thread.start()
+    try: yield instance.server_port
+    finally:
+        instance.shutdown(); instance.server_close(); thread.join(timeout=2)
 
+def respond(request, value, status=200, extra=None):
+    data = json.dumps(value).encode()
+    request.send_response(status)
+    request.send_header("Content-Type", "application/json")
+    request.send_header("Content-Length", str(len(data)))
+    request.send_header("Connection", "close")
+    for name, content in (extra or {}).items(): request.send_header(name, content)
+    request.end_headers(); request.wfile.write(data)
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
+@pytest.mark.parametrize("settings", [
+    {"host": "10.0.0.1"}, {"host": "127.0.0.1.attacker.invalid"}, {"host": "127.0.0.2"},
+    {"port": 0}, {"port": 65536}, {"port": True}, {"timeout": 0}, {"timeout": float("nan")},
+    {"timeout": float("inf")}, {"api_token": "short"}, {"api_token": TOKEN + "\n"},
+    {"allow_raw_resolve": "false"}, {"origin": "https://user:pass@example.com"},
+])
+def test_invalid_configuration_fails_before_network(settings):
+    with pytest.raises(VaultError): VaultClient(**({"api_token": TOKEN} | settings))
 
-def _mock_response(body: dict, status: int = 200):
-    """Return a mock urllib response with JSON body."""
-    data = json.dumps(body).encode()
-    mock = MagicMock()
-    mock.read.return_value = data
-    mock.status = status
-    mock.__enter__ = lambda s: s
-    mock.__exit__ = MagicMock(return_value=False)
-    return mock
+def test_authenticated_status_ignores_proxy_settings(monkeypatch):
+    def handler(request):
+        assert request.path == "/status"
+        assert request.headers["Authorization"] == f"Bearer {TOKEN}"
+        respond(request, {"status": "ok", "unlocked": True, "version": "3.0.0", "rawResolveEnabled": False,
+                          "brokerEnabled": True, "vaultFormat": 2, "extra": SENTINEL})
+    monkeypatch.setenv("HTTP_PROXY", "http://127.0.0.1:1")
+    monkeypatch.setenv("ALL_PROXY", "http://127.0.0.1:1")
+    monkeypatch.setenv("NO_PROXY", "")
+    with server(handler) as port:
+        result = VaultClient(port=port, api_token=TOKEN).get_status()
+    assert result.broker_enabled and result.vault_format == 2
+    assert SENTINEL not in repr(result)
 
+def test_redirect_is_never_followed():
+    counts = {"redirect": 0, "destination": 0}
+    def destination(request):
+        counts["destination"] += 1; respond(request, {"value": SENTINEL})
+    with server(destination) as second:
+        def redirect(request):
+            counts["redirect"] += 1
+            respond(request, {}, 302, {"Location": f"http://127.0.0.1:{second}/steal"})
+        with server(redirect) as port:
+            with pytest.raises(VaultError) as error: VaultClient(port=port, api_token=TOKEN).get_status()
+    assert error.value.code == "redirect_not_allowed"
+    assert counts == {"redirect": 1, "destination": 0}
 
-# ---------------------------------------------------------------------------
-# VaultClient.get_status
-# ---------------------------------------------------------------------------
+def test_unknown_remote_error_details_are_not_propagated():
+    with server(lambda request: respond(request, {"error": SENTINEL, "message": SENTINEL}, 500)) as port:
+        with pytest.raises(VaultError) as error: VaultClient(port=port, api_token=TOKEN).get_status()
+    assert error.value.code == "vault_error"
+    assert SENTINEL not in repr(error.value) and SENTINEL not in str(error.value)
 
-class TestGetStatus:
-    def test_unlocked(self):
-        client = VaultClient()
-        with patch("urllib.request.urlopen", return_value=_mock_response(
-            {"status": "ok", "unlocked": True}
-        )):
-            status = client.get_status()
-        assert isinstance(status, VaultStatus)
-        assert status.unlocked is True
+def test_known_error_code_is_preserved_without_remote_message():
+    with server(lambda request: respond(request, {"error": "unauthorized", "message": SENTINEL}, 401)) as port:
+        with pytest.raises(VaultError) as error: VaultClient(port=port, api_token=TOKEN).get_status()
+    assert error.value.code == "unauthorized" and SENTINEL not in str(error.value)
 
-    def test_locked(self):
-        client = VaultClient()
-        with patch("urllib.request.urlopen", return_value=_mock_response(
-            {"status": "ok", "unlocked": False}
-        )):
-            status = client.get_status()
-        assert status.unlocked is False
+def test_metadata_is_projected_and_contains_no_unknown_value_fields():
+    entry = {"id": "fixture", "name": "TOKEN", "domain": "example.com", "created": "2026-09-17", "value": SENTINEL}
+    with server(lambda request: respond(request, {"entries": [entry]})) as port:
+        results = VaultClient(port=port, api_token=TOKEN).list_secrets()
+    assert results[0].name == "TOKEN" and SENTINEL not in repr(results)
 
-    def test_connection_error_raises_vault_error(self):
-        client = VaultClient()
-        with patch("urllib.request.urlopen", side_effect=OSError("refused")):
-            with pytest.raises(VaultError) as exc_info:
-                client.get_status()
-        assert exc_info.value.code == "server_unreachable"
+def test_operation_result_discards_unknown_fields_and_validates_status():
+    def handler(request):
+        assert json.loads(request.body) == {"operation": "check"}
+        respond(request, {"operation": "check", "status": 204, "ok": True, "value": SENTINEL})
+    with server(handler) as port:
+        result = VaultClient(port=port, api_token=TOKEN).execute("check")
+    assert asdict(result) == {"operation": "check", "status": 204, "ok": True}
 
+@pytest.mark.parametrize("result", [
+    {"operation": "different", "status": 200, "ok": True},
+    {"operation": "check", "status": True, "ok": True},
+    {"operation": "check", "status": 999, "ok": False},
+    {"operation": "check", "status": 403, "ok": True},
+    {"operation": "check", "status": 200, "ok": "true"},
+])
+def test_untrusted_operation_response_is_rejected(result):
+    with server(lambda request: respond(request, result)) as port:
+        with pytest.raises(VaultError) as error: VaultClient(port=port, api_token=TOKEN).execute("check")
+    assert error.value.code == "invalid_response"
 
-# ---------------------------------------------------------------------------
-# VaultClient.list_secrets
-# ---------------------------------------------------------------------------
+def test_operation_names_are_validated_without_returning_unknown_fields():
+    with server(lambda request: respond(request, {"operations": [{"name": "check", "value": SENTINEL}]})) as port:
+        result = VaultClient(port=port, api_token=TOKEN).list_operations()
+    assert result == ["check"]
 
-class TestListSecrets:
-    def test_returns_entries(self):
-        client = VaultClient()
-        payload = {
-            "entries": [
-                {"id": "1", "name": "GITHUB_TOKEN", "domain": "@localhost", "created": "2024-01-01"},
-                {"id": "2", "name": "OPENAI_API_KEY", "domain": "@localhost", "created": "2024-01-02"},
-            ]
-        }
-        with patch("urllib.request.urlopen", return_value=_mock_response(payload)):
-            entries = client.list_secrets()
-        assert len(entries) == 2
-        assert all(isinstance(e, VaultEntry) for e in entries)
-        assert entries[0].name == "GITHUB_TOKEN"
+@pytest.mark.parametrize("operation", [None, "", "../name", "https://example.com", "a" * 65, 42])
+def test_invalid_operation_input_never_starts_a_request(operation):
+    with pytest.raises(VaultError) as error: VaultClient(api_token=TOKEN, port=1).execute(operation)
+    assert error.value.code == "invalid_arguments"
 
-    def test_empty_vault(self):
-        client = VaultClient()
-        with patch("urllib.request.urlopen", return_value=_mock_response({"entries": []})):
-            entries = client.list_secrets()
-        assert entries == []
+def test_raw_resolution_requires_an_explicit_client_opt_in():
+    with pytest.raises(VaultError) as error: VaultClient(api_token=TOKEN, port=1).resolve("TOKEN")
+    assert error.value.code == "raw_resolve_disabled"
+    with server(lambda request: respond(request, {"value": SENTINEL})) as port:
+        assert VaultClient(api_token=TOKEN, port=port, allow_raw_resolve=True).resolve("TOKEN", "https://example.com") == SENTINEL
 
+def test_empty_batch_and_invalid_concurrency():
+    client = VaultClient(api_token=TOKEN)
+    assert client.resolve_batch([]) == {}
+    for workers in [0, -1, 33, True]:
+        with pytest.raises(VaultError): client.resolve_batch(["A"], max_workers=workers)
+    result = client.resolve_batch(["A", "B"])
+    assert all(error.code == "raw_resolve_disabled" for error in result.values())
 
-# ---------------------------------------------------------------------------
-# VaultClient.resolve
-# ---------------------------------------------------------------------------
+def test_bounded_response_is_enforced_for_declared_and_streamed_bodies():
+    def handler(request): respond(request, {"data": "x" * (MAX_RESPONSE_BYTES + 1)})
+    with server(handler) as port:
+        with pytest.raises(VaultError) as error: VaultClient(api_token=TOKEN, port=port).get_status()
+    assert error.value.code == "response_too_large"
 
-class TestResolve:
-    def test_success(self):
-        client = VaultClient()
-        with patch("urllib.request.urlopen", return_value=_mock_response(
-            {"value": "ghp_supersecret"}
-        )):
-            value = client.resolve("GITHUB_TOKEN")
-        assert value == "ghp_supersecret"
+def test_absolute_deadline_interrupts_slow_response_headers():
+    def slow(request):
+        try:
+            request.wfile.write(b"HTTP/1.1 200 OK\r\n")
+            for _ in range(20):
+                request.wfile.write(b"X-Slow: data\r\n"); request.wfile.flush(); time.sleep(0.03)
+        except (BrokenPipeError, ConnectionError, OSError):
+            return
+    with server(slow) as port:
+        started = time.monotonic()
+        with pytest.raises(VaultError) as error: VaultClient(api_token=TOKEN, port=port, timeout=0.1).get_status()
+        assert time.monotonic() - started < 0.7
+    assert error.value.code == "timeout"
 
-    def test_http_error_raises_vault_error(self):
-        client = VaultClient()
-        err_body = json.dumps({"error": "not_found", "message": "Secret not found"}).encode()
-        fp = MagicMock()
-        fp.read.return_value = err_body
-        http_err = urllib.error.HTTPError(
-            url="http://127.0.0.1:3737/resolve",
-            code=404,
-            msg="Not Found",
-            hdrs=None,  # type: ignore[arg-type]
-            fp=fp,
-        )
-        with patch("urllib.request.urlopen", side_effect=http_err):
-            with pytest.raises(VaultError) as exc_info:
-                client.resolve("NONEXISTENT")
-        assert exc_info.value.code == "not_found"
+def test_clients_do_not_serialize_or_display_tokens(monkeypatch):
+    monkeypatch.setenv("ENIGMAGENT_API_TOKEN", TOKEN)
+    client = VaultClient.from_env()
+    assert TOKEN not in repr(client)
+    with pytest.raises(TypeError): pickle.dumps(client)
+    with pytest.raises(TypeError): json.dumps(client)
+    configure(api_token=TOKEN, port=3737)
+    assert get_client() is get_client()
+    assert get_client(api_token=TOKEN, port=3738).port == 3738
+    with pytest.raises(VaultError): configure(host="10.0.0.1", api_token=TOKEN)
 
-
-# ---------------------------------------------------------------------------
-# VaultClient.resolve_batch
-# ---------------------------------------------------------------------------
-
-class TestResolveBatch:
-    def test_returns_dict(self):
-        client = VaultClient()
-        counter = {"n": 0}
-
-        def side_effect(req, *args, **kwargs):
-            counter["n"] += 1
-            return _mock_response({"value": f"val{counter['n']}"})
-
-        placeholders = ["A", "B", "C"]
-        with patch("urllib.request.urlopen", side_effect=side_effect):
-            result = client.resolve_batch(placeholders)
-
-        assert isinstance(result, dict)
-        assert set(result.keys()) == set(placeholders)
-
-    def test_all_values_are_strings(self):
-        client = VaultClient()
-        with patch("urllib.request.urlopen", return_value=_mock_response({"value": "ok"})):
-            result = client.resolve_batch(["X", "Y"])
-        assert all(isinstance(v, str) for v in result.values())
-
-
-# ---------------------------------------------------------------------------
-# Module-level helpers
-# ---------------------------------------------------------------------------
-
-class TestModuleHelpers:
-    def test_get_client_returns_vault_client(self):
-        c = get_client()
-        assert isinstance(c, VaultClient)
-
-    def test_configure_returns_vault_client(self):
-        c = configure(host="10.0.0.1", port=9999)
-        assert isinstance(c, VaultClient)
-        assert "10.0.0.1" in c._base
-        assert "9999" in c._base
-
-    def test_get_client_returns_same_singleton(self):
-        configure(host="127.0.0.1", port=3737)  # reset
-        c1 = get_client()
-        c2 = get_client()
-        assert c1 is c2
+def test_invalid_environment_settings_are_rejected(monkeypatch):
+    monkeypatch.setenv("ENIGMAGENT_API_TOKEN", TOKEN)
+    monkeypatch.setenv("ENIGMAGENT_PORT", "not-a-port")
+    with pytest.raises(VaultError): VaultClient.from_env()

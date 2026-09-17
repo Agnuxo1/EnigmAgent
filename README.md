@@ -1,351 +1,124 @@
-> **Bundled gateway 2.0.0 - scoped source release (2026-09-17).** The MCP/REST
-> component now defaults to metadata only; REST requires authentication and raw
-> secrets require explicit opt-in. [Run the no-credential demo](platforms/mcp-server/README.md)
-> and inspect the [audit and remaining boundaries](docs/GATEWAY_V2_AUDIT.md).
-> Other platforms and independently published packages are not certified or
-> automatically upgraded by this change. [Previous source preserved](versions/enigmagent-mcp-1.0.0/README.md).
-
 # EnigmAgent
 
-[![npm version](https://img.shields.io/npm/v/enigmagent-mcp?label=npm&color=cb3837)](https://www.npmjs.com/package/enigmagent-mcp)
-[![npm downloads](https://img.shields.io/npm/dw/enigmagent-mcp?label=downloads)](https://www.npmjs.com/package/enigmagent-mcp)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Crypto](https://img.shields.io/badge/crypto-Argon2id%20%2B%20AES--256--GCM-green.svg)](docs/THREAT_MODEL.md)
-[![Glama MCP](https://glama.ai/mcp/servers/Agnuxo1/enigmagent-mcp/badges/score.svg)](https://glama.ai/mcp/servers/Agnuxo1/enigmagent-mcp)
-[![GitHub stars](https://img.shields.io/github/stars/Agnuxo1/EnigmAgent?style=social)](https://github.com/Agnuxo1/EnigmAgent)
-[![OpenCLAW-P2P](https://img.shields.io/badge/ecosystem-OpenCLAW--P2P-2ea44f)](https://github.com/Agnuxo1/OpenCLAW-P2P)
+Local encrypted credential storage and **operator-approved execution for AI agents**.
+The integrated 3.0.0 release contains an authenticated vault, a Node administrator,
+a bounded MCP/REST gateway, a Python client and ten native framework integrations.
 
-**Integrations:** [![n8n-nodes-enigmagent](https://img.shields.io/npm/v/n8n-nodes-enigmagent?label=n8n%20node&color=ea4b71)](https://www.npmjs.com/package/n8n-nodes-enigmagent) · [![langchain-enigmagent](https://img.shields.io/pypi/v/langchain-enigmagent?label=langchain&color=1c3c3c)](https://pypi.org/project/langchain-enigmagent/) · [![llama-index-tools-enigmagent](https://img.shields.io/pypi/v/llama-index-tools-enigmagent?label=llamaindex&color=00d4aa)](https://pypi.org/project/llama-index-tools-enigmagent/) · [![crewai-tools-enigmagent](https://img.shields.io/pypi/v/crewai-tools-enigmagent?label=crewai&color=ff5a1f)](https://pypi.org/project/crewai-tools-enigmagent/) · [Claude Desktop](INTEGRATIONS.md#claude-desktop) · [Cursor](INTEGRATIONS.md#cursor) · [Continue.dev](INTEGRATIONS.md#continuedev) · [Cline](INTEGRATIONS.md#cline-vs-code) · [Open WebUI](INTEGRATIONS.md#open-webui) · [more →](INTEGRATIONS.md)
+## Start here
 
-> **Last week I asked Claude to push a fix to a private GitHub repo. To do that, Claude needed my personal access token. I had three options, and all three were terrible: paste the token into the chat (and into the provider's logs forever), give the agent a long-lived token it could reuse on its own at 3 a.m., or give up and do it by hand.**
-
-EnigmAgent is option four.
-
-EnigmAgent provides encrypted local credential storage and placeholder-based workflows. Whether a secret reaches the model depends on the integration: browser form substitution and raw MCP resolution have different trust boundaries. JavaScript does not guarantee that plaintext exists for only one event-loop tick.
-
-> **Important:** the bundled [`platforms/mcp-server/index.js`](platforms/mcp-server/index.js) implements `enigmagent_resolve` by returning the decrypted value as MCP text. A model-connected client can expose that result to the model, conversation history or logs. Do not use this raw resolver when your requirement is to keep credentials out of model context. Independently verify the exact version and tool surface of separately distributed packages.
-
-```bash
-npx enigmagent-mcp --vault ./my.vault.json
-```
-
-That's the entire install for **Claude Desktop, Cursor, Continue.dev, Cline, Open WebUI, AnythingLLM, and LM Studio.** A separate browser extension covers everything that lives in a tab.
-
-> ⭐ **Star this repo if you've ever pasted a token you regretted.**
-
----
-
-## 30-second Claude Desktop setup
-
-Add this to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
-
-```json
-{
-  "mcpServers": {
-    "enigmagent": {
-      "command": "npx",
-      "args": ["-y", "enigmagent-mcp", "--vault", "/absolute/path/to/my.vault.json"]
-    }
-  }
-}
-```
-
-Restart Claude Desktop. Two new tools appear: `enigmagent_resolve` and `enigmagent_list`. Now ask Claude:
-
-> *"List my vault entries, then call my GitHub API with `{{GITHUB_TOKEN}}` in the Authorization header."*
-
-Listing names does not return values, but calling the bundled `enigmagent_resolve` does. The setup above is not evidence of context isolation. Use only test credentials until the chosen package and client have been checked for the required trust boundary.
-
----
-
-## The problem (in detail)
-
-When you use an AI agent — Claude, ChatGPT, Cursor, a browser automation tool — to do something that requires credentials, you face an impossible choice:
-
-| Option | What happens |
+| Goal | Entry point |
 |---|---|
-| Paste the secret in the chat | It ends up in AI provider logs, context window, possibly training data |
-| Give the agent a long-lived token | The agent can act with full permissions, in any future session |
-| Don't use agents for sensitive tasks | You lose most of the value |
+| Understand what is released and tested | [Integrated release v3](docs/INTEGRATED_RELEASE_V3.md) |
+| Download the versioned distributions | [GitHub releases](https://github.com/Agnuxo1/EnigmAgent/releases) |
+| Use a native agent framework | [Python SDK](platforms/python-sdk/README.md) |
+| Run the MCP/REST gateway | [Gateway](platforms/mcp-server/README.md) |
+| Manage a vault without writing application code | [Administrator](platforms/cli/README.md) |
+| Run a source-pinned container | [Container](platforms/docker/README.md) |
+| Check security boundaries | [Threat model](docs/THREAT_MODEL.md) and [security policy](SECURITY.md) |
+| Inspect earlier source versions | [Preserved versions](versions/) |
+| Review integration evidence | [Native runtime evidence](audit/integration-runtime-evidence.json) |
 
-**EnigmAgent offers a placeholder workflow**, not a universal no-disclosure guarantee. A trusted execution adapter must perform the authenticated operation outside the model and avoid returning credentials. A raw resolver is not such an adapter.
+**Package registry versions and browser-store packages are separate publication
+channels.** A GitHub source change does not silently update npm, PyPI, a browser
+extension or a user's existing installation. Use the versioned release artifacts
+and their checksums; inspect a registry's actual version before installing it.
 
----
+## Why a fixed-operation broker?
 
-## How it works
+A tool that returns a decrypted credential also gives that credential to its
+caller. Placeholder syntax alone cannot keep it out of an agent's context.
+EnigmAgent therefore separates two modes:
 
-```
-┌─────────────────┐   types {{GITHUB_TOKEN}}   ┌────────────────────┐
-│   LLM / Agent   │ ──────────────────────────▶ │  Tool call / Form  │
-│  (any provider) │                             │  (github.com / …)  │
-└─────────────────┘                             └─────────┬──────────┘
-                                                          │ submit / call (intercepted)
-                                                          ▼
-                                              ┌───────────────────────┐
-                                              │      EnigmAgent       │
-                                              │  detects placeholder, │
-                                              │  checks domain match, │
-                                              │  decrypts → ghp_xxx   │
-                                              └───────────┬───────────┘
-                                                          │ real value
-                                                          ▼
-                                              ┌───────────────────────┐
-                                              │  Request reissued     │
-                                              │  with real credential │
-                                              └───────────────────────┘
-```
+* **Agent mode:** the operator defines fixed GET/HEAD operations. The agent selects
+  only an operation name. The broker attaches the credential to the configured
+  destination and returns only `{operation, status, ok}`. Upstream response bodies
+  and headers are discarded, including reflected or encoded credentials.
+* **Explicit trusted-backend mode:** raw resolution requires deliberate opt-in.
+  It is incompatible with the operation-broker transport and is not a
+  model-isolating interface.
 
-This diagram describes the intended substitution workflow, not the raw MCP resolver. During browser substitution, plaintext is accessible to scripts with access to the destination input. Event handlers, extensions and the destination application can observe or retain it. Memory lifetime is not guaranteed by JavaScript garbage collection.
+Default MCP mode exposes metadata only. REST always requires authentication.
+The broker allows public IPv4 HTTPS destinations. Fixed 127.0.0.1 HTTP destinations
+require explicit operator enablement. Redirects, user-selected URLs/headers and
+private/reserved egress destinations are not accepted.
 
----
+## Native integrations
 
-## Install paths
-
-### MCP server (check the tool's disclosure behavior)
-
-```bash
-npx enigmagent-mcp --vault ./my.vault.json     # MCP stdio for Claude/Cursor/etc.
-npx enigmagent-mcp --mode rest --port 3737     # local REST API for custom integrations
-```
-
-Set `ENIGMAGENT_USER` + `ENIGMAGENT_PASS` env vars to skip the interactive unlock prompt (CI/headless mode).
-
-### Browser extension (for credentials inside web forms)
-
-**Chrome / Edge / Brave**
-
-1. Download the [latest release ZIP](https://github.com/Agnuxo1/EnigmAgent/releases) and unzip it.
-2. Go to `chrome://extensions` and enable **Developer mode** (top-right toggle).
-3. Click **Load unpacked** and select the `extension/` folder.
-
-**Firefox**
-
-1. Go to `about:debugging#/runtime/this-firefox`.
-2. Click **Load Temporary Add-on…**
-3. Select `extension/manifest.json`.
-
-> Signed releases for Chrome Web Store, Firefox AMO, Edge Add-ons, and Opera are in progress.
-
----
-
-## Per-client config
-
-### Claude Desktop
-See [30-second setup above](#30-second-claude-desktop-setup).
-
-### Cursor
-
-Add to `~/.cursor/mcp.json`:
-```json
-{
-  "mcpServers": {
-    "enigmagent": {
-      "command": "npx",
-      "args": ["-y", "enigmagent-mcp", "--vault", "/abs/path/my.vault.json"]
-    }
-  }
-}
-```
-
-### Continue.dev
-
-In `~/.continue/config.yaml`:
-```yaml
-mcpServers:
-  - name: enigmagent
-    command: npx
-    args: ["-y", "enigmagent-mcp", "--vault", "/abs/path/my.vault.json"]
-```
-
-### Cline (VS Code)
-
-Edit `cline_mcp_settings.json`:
-```json
-{
-  "mcpServers": {
-    "enigmagent": {
-      "command": "npx",
-      "args": ["-y", "enigmagent-mcp", "--vault", "/abs/path/my.vault.json"]
-    }
-  }
-}
-```
-
-### Open WebUI
-
-Use [`mcpo`](https://github.com/open-webui/mcpo) as the bridge:
-```bash
-mcpo --port 8000 -- npx enigmagent-mcp --vault /abs/path/my.vault.json
-```
-
----
-
-## Real use cases
-
-### Browser-based agents
-
-Tell your agent: *"When you need to authenticate on GitHub, type `{{GITHUB_TOKEN}}` and submit. Do not ask me for the real value."*
-
-The agent types the placeholder. EnigmAgent intercepts, resolves on the bound domain, injects, re-submits. A small badge shows: **✓ submitted with real values**.
-
-### Document injection (`{{DOC:filename}}`)
-
-Upload a Markdown file as a document secret. Reference it as `{{DOC:system-prompt.md}}` in any text field on its bound domain. Your agent can embed your full system prompt without it appearing in the chat.
-
-### Personal data placeholders
-
-```
-add NIF @agenciatributaria.gob.es 12345678A
-add IBAN @banca.example.com ES9121000418450200051332
-```
-
-Any custom name works. Domain binding is enforced everywhere.
-
----
-
-## Placeholder syntax reference
-
-| Syntax | Resolves to |
-|---|---|
-| `{{GITHUB_TOKEN}}` | Secret named `GITHUB_TOKEN`, only on its bound domain |
-| `{{LOGIN:github.com}}` | First secret bound to `github.com` |
-| `{{DOC:report.md}}` | Contents of stored document `DOC_report.md` |
-| `{{NIF}}` | Personal-data placeholder — any custom name works |
-
-Name grammar: `[A-Za-z0-9_:\-.@]+` — case-insensitive.
-
----
-
-## Security model
-
-| Layer | Implementation |
-|---|---|
-| Password-to-key derivation | **Argon2id** (m=64 MiB, t=3, p=1) — `@noble/hashes@1.4.0`, bundled, reproducible |
-| Secret encryption | **AES-256-GCM**, 96-bit nonce per entry |
-| Key material | Lives in process memory only — never written to disk |
-| Username binding | Username mixed into Argon2id context: same password + different user = different key |
-| Domain enforcement | Every secret pinned to a domain; resolver refuses mismatched origins |
-| Delivery to site | Native `value` setter + `input`/`change` events — never clipboard, never console |
-| Vault storage | Encrypted file on disk, plaintext never persisted |
-
-Full threat model: [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md). What it does NOT protect against:
-
-- A compromised process on your machine reading the unlocked session memory
-- A malicious MCP server you've connected to with permission to call `enigmagent_resolve`
-- Side-channels (timing, swap, core dumps) — out of scope for v0.x
-
----
-
-## EnigmAgent vs. 1Password / Bitwarden / `.env`
-
-| | 1Password / Bitwarden | `.env` files | EnigmAgent |
+| Framework | Factory key | Tested package | Version |
 |---|---|---|---|
-| **Target user** | Humans logging in | Devs avoiding hardcoded secrets | AI agents acting on behalf of humans |
-| **Core problem** | Filling logins for humans | Keeping secrets out of source control | Keeping secrets out of AI context windows and logs |
-| **At rest** | Encrypted (cloud) | Plaintext | Encrypted (local file) |
-| **Visible to LLM context** | Yes (when human pastes) | Yes (when agent cats `.env`) | **Never** |
-| **Domain binding** | Per-item URL hint | None | Enforced |
-| **Cloud sync** | Yes | N/A | No — local-only by design |
+| LangChain | `langchain` | `langchain-core` | `1.6.3` |
+| LangGraph | `langgraph` | `langgraph` | `1.2.11` |
+| LlamaIndex | `llamaindex` | `llama-index-core` | `0.14.24` |
+| CrewAI | `crewai` | `crewai` | `1.15.22` |
+| Haystack | `haystack` | `haystack-ai` | `3.1.1` |
+| Microsoft Agent Framework | `agent_framework` | `agent-framework-core` | `1.18.0` |
+| smolagents | `smolagents` | `smolagents` | `1.26.0` |
+| Agno | `agno` | `agno` | `3.0.10` |
+| PydanticAI | `pydantic_ai` | `pydantic-ai-slim` | `2.44.0` |
+| AutoGen Core | `autogen` | `autogen-core` | `0.7.5` |
 
-Use 1Password or Bitwarden for your own logins. Use `.env` for your local-dev shorthand. Use EnigmAgent for the credentials your AI agents need to act on your behalf.
+These are **third-party compatibility integrations maintained in this repository**.
+Each is executed against a synthetic encrypted vault and a real authenticated
+local service. The tests check native results, available tracing/serialization
+surfaces and rejection of unknown operations. They are not claims of upstream
+endorsement, upstream merge, model quality or formal noninterference.
 
----
+LangGraph includes checkpoint inspection. Haystack includes a serialized pipeline
+round trip with an explicit trusted-module allowlist. PydanticAI executes a local
+FunctionModel-driven agent loop; it does not call a paid model. MCP interoperability
+is also checked with the independently installed official Python MCP client.
 
-## Why I built this
+## Authenticated storage
 
-EnigmAgent is part of the [OpenCLAW / P2PCLAW](https://www.p2pclaw.com) ecosystem of privacy-preserving local AI tooling — a multi-agent scientific research network where dozens of LLM agents coordinate, evaluate each other, and publish papers. Every one of those agents needs credentials. None of them should have them.
+New vaults use **Argon2id and AES-256-GCM**. Vault format v2 authenticates the complete
+entry set together, including names, domains and values. The envelope header is
+bound as associated data. Writes are revision-checked and atomically replace the
+current file after a flushed temporary write. A failed write does not update the
+session's committed in-memory state. Failed unlock attempts lock the old session.
 
-That's the entire problem statement. The vault is just the smallest viable solution.
+Legacy format v1 is read-only until an explicit migration. Migration verifies all
+entry ciphertexts and preserves the original file as a permanent `.v1-backup`, as
+well as the rolling `.bak`. Legacy domain metadata was not authenticated by v1;
+its historical correctness cannot be recovered cryptographically by migration.
+Review old bindings and independently configure approved destinations.
 
-— [Francisco Angulo de Lafuente](https://github.com/Agnuxo1)
+A compromised broker process, administrator or operating system is outside this
+boundary. Hostile generated code needs an independently permissioned broker
+account/container; sharing an OS identity is not a sandbox. See the threat model
+for backup, rollback, Windows permissions and resource-limit qualifications.
 
----
+## Verify from source
 
-## Repository layout
+Use Node.js 22 or newer. The full native integration matrix is tested with Python
+3.12; the dependency-light client requires Python 3.10 or newer.
 
+```sh
+cd platforms/mcp-server
+npm ci --ignore-scripts --no-audit --no-fund
+npm test
+node tests/verify-package.mjs
 ```
-EnigmAgent/
-├── extension/              Chrome/Firefox extension (MV3)
-├── platforms/firefox-ext/  Firefox manifest variant
-├── build-tool/             Reproducible build (esbuild + icon generator)
-├── docs/                   ARCHITECTURE.md, THREAT_MODEL.md
-│   └── papers/             Background research papers (PDF)
-├── examples/               Placeholder schemas
-├── tests/                  Smoke tests + crypto round-trip
-├── glama.json              Glama MCP server manifest
-├── smithery.yaml           Smithery server descriptor
-├── PRIVACY.md
-├── SECURITY.md             Responsible disclosure
-└── README.md
-```
 
-The Node/MCP server source is in the sister repo: [Agnuxo1/enigmagent-mcp](https://github.com/Agnuxo1/enigmagent-mcp).
+The integrated GitHub workflow additionally executes the Python integrations,
+installs built packages in clean environments, and starts the actual Docker image.
+Tagged release publication depends on those checks succeeding. No recurring
+maintenance task or mass outreach is configured.
 
----
+## Historical platform code
 
-## Reproducing the extension build
+The browser extension, PWA, native GUI/IDE/mobile wrappers and older integration
+prototypes remain available as historical source. They are **not certified by the
+Node/Python v3 release tests**, and legacy v1 browser storage is not interchangeable
+with the new v2 Node vault. Their original files are also retained in the complete
+versioned source archives. [Platform status](platforms/README.md) distinguishes
+validated components from historical material instead of advertising every folder
+as a completed supported product.
 
-```bash
-cd build-tool
-npm ci
-npx esbuild argon2-entry.js \
-  --bundle --minify --format=iife --target=es2020 \
-  --outfile=../extension/lib/argon2id.js
-python make-icons.py
-```
+## Contributing and citation
 
-`package.json` and `package-lock.json` pin `@noble/hashes@1.4.0`. The output is byte-reproducible — verify with `sha256sum extension/lib/argon2id.js`.
+See [CONTRIBUTING.md](CONTRIBUTING.md), [CITATION.cff](CITATION.cff) and the
+[integration plan](docs/GATEWAY_V2_INTEGRATION_PLAN.md). Contributions must solve a
+real integration need and include reproducible evidence. Do not mass-post issues,
+request artificial engagement or re-contact maintainers who declined a proposal.
 
----
-
-## Why not just use `.env` files? (Comparison)
-
-Encrypted storage protects a different boundary from model-context isolation.
-Environment variables, secret managers and EnigmAgent all require careful
-control of the process that reads a credential and where its output is sent.
-Do not infer that a tool keeps secrets out of logs merely because its input
-uses placeholders. This repository does not establish exclusive capabilities
-or a security comparison against other secret-management products.
-
----
-
-## License
-
-MIT — see [LICENSE](LICENSE).
-
-## Built by
-
-**[Francisco Angulo de Lafuente](https://github.com/Agnuxo1)** — independent researcher & developer. 35+ years in software. Also building [P2PCLAW](https://p2pclaw.com) (decentralized science network), [BenchClaw](https://github.com/Agnuxo1/BenchClaw) (agent evaluation), and [PaperClaw](https://www.npmjs.com/package/paperclaw) (autonomous research publishing).
-
-If this tool is useful to you:
-- ⭐ **Star the repo** — it's how the AI ecosystem discovers tools
-- 🐛 **Open an issue** — every real use case sharpens the threat model
-- 📣 **Tell one person** who still pastes API keys into Claude
-
----
-
-## 🧩 P2PCLAW Ecosystem
-
-This project is part of **P2PCLAW** — a distributed AI research network with production-grade benchmarking, agent tooling, and model distribution.
-
-| Component | Role | Link |
-|-----------|------|------|
-| **OpenCLAW-P2P** | Core protocol · Lean 4 proofs · Papers | [github.com/Agnuxo1/OpenCLAW-P2P](https://github.com/Agnuxo1/OpenCLAW-P2P) |
-| **BenchClaw** | 17-judge agent benchmarking | [github.com/Agnuxo1/benchclaw](https://github.com/Agnuxo1/benchclaw) |
-| **EnigmAgent** | Local encrypted vault for credentials | [github.com/Agnuxo1/EnigmAgent](https://github.com/Agnuxo1/EnigmAgent) |
-| **AgentBoot** | Bare-metal OS installer | [github.com/Agnuxo1/AgentBoot](https://github.com/Agnuxo1/AgentBoot) |
-| **CAJAL** | 4B research LLM for papers | [huggingface.co/Agnuxo/CAJAL-4B-P2PCLAW](https://huggingface.co/Agnuxo/CAJAL-4B-P2PCLAW) |
-
-🌐 **Main website:** [https://www.p2pclaw.com/](https://www.p2pclaw.com/)
-📄 **Paper:** [arXiv:2604.19792](https://arxiv.org/abs/2604.19792)
-
----
-
-## 💝 Support
-
-If this tool is useful to you:
-- ⭐ **Star the repo** — it's how the ecosystem discovers tools
-- 🐛 **Open an issue** — every real use case sharpens the project
-- 💰 **Sponsor:** [github.com/sponsors/Agnuxo1](https://github.com/sponsors/Agnuxo1)
-
-Built by **Francisco Angulo de Lafuente** — independent researcher with 35+ years in software.
+MIT License. Copyright 2026 Francisco Angulo de Lafuente.

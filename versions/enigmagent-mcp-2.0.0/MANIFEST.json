@@ -1,0 +1,9 @@
+{
+  "source_commit": "8ffd91956517907eeb624e94eb229b01b9ed90ce",
+  "component_version": "2.0.0",
+  "scope": "Complete tracked repository, including the earlier v1 source archive",
+  "tracked_files": 347,
+  "sha256": "93a09caac35995bb4186912c7c7a5b40ff37238f02ef3e96e18a8cecc429b951",
+  "verification": "Every archived file compared byte-for-byte to its Git blob",
+  "additional_private_files": false
+}

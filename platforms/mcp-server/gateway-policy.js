@@ -1,6 +1,6 @@
 /** Shared validation and disclosure policy for the local vault gateway. */
 export const MAX_MESSAGE_BYTES = 16 * 1024;
-export const SERVER_VERSION = '2.0.0';
+export const SERVER_VERSION = '3.0.0';
 export const PROTOCOL_VERSIONS = ['2025-06-18', '2024-11-05'];
 
 /** Test for a JSON object rather than an array, null or primitive. */
@@ -10,7 +10,10 @@ export function isObject(value) {
 
 /** Return only public error codes; never serialize arbitrary exception messages. */
 export function publicError(error) {
-  const allowed = new Set(['vault_locked', 'not_found', 'no_domain_binding', 'domain_mismatch']);
+  const allowed = new Set(['vault_locked', 'not_found', 'no_domain_binding', 'domain_mismatch',
+    'migration_required', 'operation_not_allowed', 'operation_timeout', 'operation_failed',
+    'destination_not_allowed', 'redirect_not_allowed', 'operation_response_too_large',
+    'invalid_credential_header', 'broker_busy']);
   const candidate = error?.code || error?.message;
   return allowed.has(candidate) ? candidate : 'vault_error';
 }
@@ -43,4 +46,11 @@ export function validateResolveArguments(args) {
 /** Project public metadata explicitly, even when a vault implementation adds fields. */
 export function listMetadata(vault) {
   return vault.list().map(({ id, name, domain, created }) => ({ id, name, domain, created }));
+}
+
+/** Accept only an operation identifier, never user-selected networking parameters. */
+export function validateOperationArguments(args) {
+  if (!isObject(args) || Object.keys(args).length !== 1 || typeof args.operation !== 'string' ||
+      !/^[A-Za-z][A-Za-z0-9_-]{0,63}$/.test(args.operation)) throw new TypeError('invalid_arguments');
+  return args.operation;
 }

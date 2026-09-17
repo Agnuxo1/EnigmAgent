@@ -1,51 +1,24 @@
-# EnigmAgent Docker
+# EnigmAgent v3 container
 
-Run the EnigmAgent vault in a container — PWA on port 8080, optional REST API on port 3737.
+Build from the repository root with `docker build -t enigmagent:3.0.0 .`.
+The Dockerfile pins the public Node base image by digest and copies this exact
+reviewed gateway source. It does not install a previously published package.
+The process runs as the unprivileged `node` user. The default is MCP over stdio;
+REST requires an explicit command and an API token.
 
-## Quick start
+The included Compose file publishes REST to **127.0.0.1:3737 only**, mounts an
+existing vault read-only and rejects missing environment configuration. Operators
+must grant the container user read access to the vault. Never put actual passwords
+or tokens into a committed Compose file. Container environment/configuration may
+be visible to administrators with Docker access; they are inside the trust boundary.
 
-```bash
-# Build and start (from repo root)
-docker compose -f platforms/docker/docker-compose.yml up -d
+For an operation broker, mount an operator-owned operations configuration read-only
+and add `--operations /path/to/operations.json`. Never enable raw resolution on a
+broker transport. HTTPS public IPv4 destinations are allowed; other egress is
+denied except fixed 127.0.0.1 HTTP requests deliberately enabled by the operator.
+The old PWA/static-file/unprotected REST service is no longer a container entrypoint.
+The browser and desktop products have separate release and validation status.
 
-# Open the vault in your browser
-open http://localhost:8080
-```
-
-## Vault file
-
-Vault data is stored in `platforms/docker/vault/vault.json` (auto-created on first unlock).
-The directory is mounted as a Docker volume, so data persists across container restarts.
-
-## Enable REST API for AI agents
-
-Uncomment the environment variables in `docker-compose.yml`:
-
-```yaml
-environment:
-  ENIGMAGENT_REST: "true"
-  ENIGMAGENT_USER: "alice"
-  ENIGMAGENT_PASS: "your-vault-password"
-```
-
-Then:
-```bash
-docker compose up -d
-curl -X POST http://localhost:3737/resolve \
-  -H 'Content-Type: application/json' \
-  -d '{"placeholder":"API_KEY","origin":"https://api.example.com"}'
-```
-
-## Build from scratch
-
-```bash
-# From repo root
-docker build -f platforms/docker/Dockerfile -t enigmagent .
-docker run -p 8080:8080 -v ./platforms/docker/vault:/data enigmagent
-```
-
-## Security
-
-- The container binds to all interfaces (`0.0.0.0`) — add a reverse proxy with TLS for production
-- REST API (`3737`) should be firewall-restricted or only accessible via localhost
-- The vault file is encrypted at rest; the container only holds the decryption key in memory
+The versioned GitHub release includes the tested image archive and its source
+revision. See `scripts/test-container.py` and the integrated-release CI job for
+real container startup, authentication, metadata and raw-denial tests.

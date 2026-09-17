@@ -50,11 +50,11 @@ const initialize = { jsonrpc: '2.0', id: 1, method: 'initialize', params: {
   protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'fixture', version: '1' } } };
 const initialized = { jsonrpc: '2.0', method: 'notifications/initialized' };
 
-for (const raw of [false, true]) test(`real REST and client preserve v1 vault compatibility, raw=${raw}`, async () => {
+for (const raw of [false, true]) test(`real REST and client use the current authenticated vault, raw=${raw}`, async () => {
   const state = await launch(['--mode','rest','--port','0', ...(raw ? ['--allow-raw-resolve'] : [])]);
   const port = Number(/127\.0\.0\.1:(\d+)/.exec(state.stderr)[1]);
   const client = new VaultClient({ token: env.ENIGMAGENT_API_TOKEN, port });
-  assert.equal((await client.status()).version, '2.0.0');
+  assert.equal((await client.status()).version, '3.0.0');
   assert.equal((await client.list())[0].name, 'TEST_TOKEN');
   assert(!JSON.stringify(client).includes(env.ENIGMAGENT_API_TOKEN));
   if (raw) {
@@ -97,7 +97,7 @@ test('CLI requires credentials and REST authentication before opening a vault', 
 test('CLI help and version do not require credentials', () => {
   for(const args of [['--version'],['--help']]) {
     const child=spawnSync(process.execPath,[cli,...args],{env:{PATH:process.env.PATH,SystemRoot:process.env.SystemRoot},encoding:'utf8',timeout:3000});
-    assert.equal(child.status,0); assert(child.stdout.includes('2.0.0'));
+    assert.equal(child.status,0); assert(child.stdout.includes('3.0.0'));
   }
 });
 test('client does not follow redirects or leak arbitrary server errors', async t => {

@@ -67,3 +67,11 @@ my.vault.json
 PUSH.md
 LAUNCH_REPORT.md
 .internal/
+
+# Integrated release validation outputs
+.venv-integrations/
+release-artifacts/
+publish-ready/
+published/
+audit/*.log
+platforms/python-sdk/dist/
