@@ -3,7 +3,7 @@ import { createServer } from 'node:http';
 import { createHash, timingSafeEqual } from 'node:crypto';
 import {
   MAX_MESSAGE_BYTES, SERVER_VERSION, listMetadata, publicError,
-  validateResolveArguments, validateToken,
+  validateResolveArguments, validateToken, validateOperationArguments,
 } from './gateway-policy.js';
 
 const digest = value => createHash('sha256').update(value).digest();
@@ -60,8 +60,9 @@ function readJson(request, limit, timeoutMs) {
  * A bearer token authorizes the whole vault, not individual tenants. Raw resolution
  * is disabled by default and cannot be enabled by a request or tool argument.
  */
-export function createRestServer({ vault, token, allowRawResolve = false, bodyTimeoutMs = 5000 }) {
+export function createRestServer({ vault, token, allowRawResolve = false, bodyTimeoutMs = 5000, broker = null }) {
   if (typeof allowRawResolve !== 'boolean') throw new TypeError('Raw resolution policy must be boolean');
+  if (broker && allowRawResolve) throw new TypeError('Broker and raw resolution cannot share a transport');
   const tokenDigest = digest(validateToken(token));
   if (!Number.isInteger(bodyTimeoutMs) || bodyTimeoutMs < 1 || bodyTimeoutMs > 60000) {
     throw new TypeError('Invalid body timeout');
@@ -83,16 +84,19 @@ export function createRestServer({ vault, token, allowRawResolve = false, bodyTi
         return respond(response, 401, { error: 'unauthorized' });
       }
       const route = request.url;
-      if (!['/status', '/list', '/resolve'].includes(route)) return respond(response, 404, { error: 'not_found' });
-      const method = route === '/resolve' ? 'POST' : 'GET';
+      if (!['/status', '/list', '/resolve', '/operations', '/execute'].includes(route)) return respond(response, 404, { error: 'not_found' });
+      const method = ['/resolve', '/execute'].includes(route) ? 'POST' : 'GET';
       if (request.method !== method) return respond(response, 405, { error: 'method_not_allowed' });
       if (route === '/status') {
         return respond(response, 200, { status: 'ok', unlocked: vault.isUnlocked,
-          version: SERVER_VERSION, rawResolveEnabled: allowRawResolve });
+          version: SERVER_VERSION, rawResolveEnabled: allowRawResolve, brokerEnabled: Boolean(broker), vaultFormat: vault.formatVersion ?? null });
       }
       if (!vault.isUnlocked) return respond(response, 423, { error: 'vault_locked' });
       if (route === '/list') return respond(response, 200, { entries: listMetadata(vault) });
-      if (!allowRawResolve) return respond(response, 403, { error: 'raw_resolve_disabled' });
+      if (route === '/operations') return broker
+        ? respond(response, 200, { operations: broker.list() }) : respond(response, 404, { error: 'not_found' });
+      if (route === '/execute' && !broker) return respond(response, 404, { error: 'not_found' });
+      if (route === '/resolve' && !allowRawResolve) return respond(response, 403, { error: 'raw_resolve_disabled' });
       if (!/^application\/json(?:\s*;\s*charset=utf-8)?$/i.test(request.headers['content-type'] || '') ||
           request.headers['content-encoding'] !== undefined) {
         return respond(response, 415, { error: 'unsupported_media_type' });
@@ -103,6 +107,12 @@ export function createRestServer({ vault, token, allowRawResolve = false, bodyTi
       let payload;
       try { payload = await readJson(request, MAX_MESSAGE_BYTES, bodyTimeoutMs); }
       catch (error) { return respond(response, error.status, { error: error.code }); }
+      if (route === '/execute') {
+        let operation;
+        try { operation = validateOperationArguments(payload); }
+        catch { return respond(response, 400, { error: 'invalid_arguments' }); }
+        return respond(response, 200, await broker.execute(operation));
+      }
       let args;
       try { args = validateResolveArguments(payload); }
       catch { return respond(response, 400, { error: 'invalid_arguments' }); }

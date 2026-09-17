@@ -1,73 +1,73 @@
-# Threat Model
+# EnigmAgent v3 threat model
 
-## Scope and component boundaries
+## Assets and trusted actors
 
-The browser substitution flow and the bundled MCP/REST resolver are not
-interchangeable. In `platforms/mcp-server/index.js`, `enigmagent_resolve` returns
-`content: [{ type: 'text', text: value }]`; REST `/resolve` also returns the
-resolved value to its caller. Domain matching does not prevent that caller
-from forwarding or logging the value. Do not connect a raw resolver to a model
-when context isolation is required. This observation is based on source review,
-not a test using real credentials or a complete security audit.
+Assets are credential values, encrypted vaults, metadata, master passwords and
+broker connection tokens. The operator, broker process, its OS identity, private
+configuration and trusted local storage directory are trusted. Agent/framework
+processes are not automatically isolated merely because they use a different
+object or language. Untrusted generated code must run without the broker's
+filesystem, process-memory, debugger, master-password or Docker-administration
+access. A separate service identity/container is an operational requirement, not a
+property magically supplied by Python or MCP.
 
-Separately published packages and adapters may have different behavior. Verify
-their exact versions rather than transferring guarantees between components.
+## What the tested implementation enforces
 
-## What EnigmAgent defends against
+Format v2 uses the fixed username-bound Argon2id KDF and AES-256-GCM over the complete
+entry set; associated data binds envelope version/KDF/salt. Invalid schemas, tags,
+duplicate names/IDs, unsupported KDF parameters and bounded-size violations are
+rejected. Failed unlock attempts lock the prior session. Legacy v1 is read-only
+until migration. Migration checks every encrypted entry, but cannot prove the
+history of previously unauthenticated domain metadata.
 
-| Threat | Defense |
-|---|---|
-| LLM provider logs or trains on your secret | Browser substitution can avoid typing a secret into a prompt, but this does not cover raw MCP resolution, page scripts, client logs or tool responses. |
-| Chat history leaks your secret | Depends on the complete integration. A raw resolver result can enter history. |
-| Stolen vault file | AES-256-GCM with an Argon2id-derived key raises the cost of offline guesses. The previous numerical estimate was incorrect: 100 million guesses at 800 ms each is about 2.54 serial years, not 2,500. That hypothetical rate is not a measured attack cost, and password length alone does not determine entropy. |
-| Rogue site tricking the agent into pasting a token | Every secret is pinned to a domain. The bridge refuses to resolve on mismatched origins; a phishing site at `g1thub.com` gets `domain_mismatch` back. |
-| Clipboard sniffers / paste loggers | The plaintext is written directly to the input's `value` property via the native setter — never to `navigator.clipboard`. |
-| A second tab reading the plaintext | Extension isolation separates ordinary origins, but destination-page scripts and privileged extensions can read injected values. There is no universal protection against those observers. |
-| Agent trying to exfiltrate the value by pasting it into the chat | A correctly isolated execution adapter must not return credentials. The bundled raw MCP resolver does return them and is unsuitable for this requirement. |
+Cooperating writers use a storage lock and a revision hash. Each committed vault
+replacement follows a flushed temporary write. Failed writes do not update the
+session's committed memory. The original v1 file is preserved in `.v1-backup`; later
+v2 writes do not replace it. A rolling `.bak` and explicit authenticated recovery
+retain previous/damaged bytes. No timer-based lock stealing or silent corrupt-file
+replacement occurs. An interrupted initial backup or stale lock requires operator
+inspection. A full disk, power loss, filesystem corruption or hostile filesystem
+implementation is not assumed to be recoverable automatically.
 
-## What EnigmAgent does NOT defend against
+REST requires authentication, checks Host and methods, rejects browser origins,
+and bounds request bodies, headers, connections and deadlines. Its default listener
+is loopback. Explicit container binding to 0.0.0.0 requires host-loopback publishing
+and network isolation. MCP stdio trusts the process launcher/transport owner, handles
+invalid frames without invoking tools, and never executes a notification as a tool.
 
-| Threat | Why |
-|---|---|
-| Compromised OS / kernel malware | A kernel-level attacker reads process memory. No userland tool can stop this. |
-| Another browser extension with `<all_urls>` | A malicious extension can read DOM values and keystrokes. Users must audit what they install. Consider a separate browser profile for EnigmAgent. |
-| Phishing the vault password | If an attacker convinces you to type your master password into a lookalike page, they win. The vault UI runs only at the extension origin — verify the URL bar shows `chrome-extension://...` before typing. |
-| Malicious version of EnigmAgent itself | Install only from signed releases; verify the SHA256 of `argon2id.js` matches the reproducible build. |
-| Weak password | Argon2id makes brute force expensive but a 4-character password still falls in minutes. The UI enforces a minimum of 8 chars; 12+ is strongly recommended. |
-| Screen recording or shoulder-surfing | If a value is ever shown on screen (the `reveal` command), a recorder captures it. The default `get` command masks. |
-| User manually pasting the secret into the chat | Nothing stops the user from defeating the system. The agent-side system prompt (see [examples/agent-system-prompt.md](../examples/agent-system-prompt.md)) is the first line of defense. |
+The broker takes an operation identifier only. Its operator-owned configuration
+fixes destination, method, header and credential selector. Only public IPv4 HTTPS
+is permitted by default. The explicit loopback option permits fixed 127.0.0.1 HTTP
+operations. DNS results are checked and a selected address is pinned for the
+request. Redirects are refused. Upstream response bodies/headers are discarded;
+only `{operation, status, ok}` leaves the broker. Fixed error codes omit arbitrary
+exception details. Broker and raw-resolution modes cannot share a transport.
 
-## Residual risks we accept
+## Not guaranteed
 
-### Brief plaintext exposure in DOM
+* A raw resolver returns plaintext to its caller. Placeholder syntax is not a
+  security boundary. Do not expose raw resolver outputs to a model.
+* A malicious destination can encode information in HTTP status or timing. This
+  bounded result policy is not formal noninterference or a no-side-channel proof.
+* An administrator, compromised OS, broker process or same-identity debugger may
+  read credentials or replace policy. JavaScript/Python memory erasure is not
+  guaranteed. Removing environment-map entries does not erase all OS/engine copies.
+* The connection token is not per-user/per-operation RBAC. Authorized callers can
+  repeat allowed operations and may cause availability/load problems within limits.
+* Domain checks on a trusted raw resolver use caller-declared origins. They are not
+  signed origin attestations. Subdomains follow the documented legacy-compatible
+  matching rule; choose narrow bindings and independently verified broker URLs.
+* Whole-file replay, malicious backups, Windows ACLs, network filesystems and
+  unsupported host/runtime configurations need additional operational safeguards.
+* Browser DOM substitution necessarily exposes submitted values to that page's
+  execution environment. Old PWA/GUI/native wrappers have different boundaries and
+  are not validated by the v3 Node/Python tests.
 
-During the submit-time swap, the real value is present in `<input>.value`. Destination-page event handlers and other extensions with page access can read it synchronously; they do not need to win a timing race. JavaScript does not guarantee erasure after one event-loop tick. Treat the destination page as a credential recipient. Mitigations:
+## Evidence
 
-- Write via the native setter + dispatch `input`/`change` once — no extra observability window.
-- Re-submit immediately with `form.requestSubmit()`.
-- Recommend a separate browser profile with no other `<all_urls>` extensions.
-
-### `<all_urls>` host permission
-
-The content script must run on every page because the user cannot predict which origins their agent will touch. This is the same permission most password managers request. A future version may offer a "strict mode" that only activates on domains with a bound secret.
-
-### Reliance on `chrome.storage.local`
-
-The vault file lives in `chrome.storage.local`, which is accessible to the extension itself but not to other extensions. It is cleared if the user removes the extension — so users must **export** the vault before uninstalling. The export is the same encrypted JSON; it is safe to back up to untrusted storage.
-
-## Assumptions
-
-- Browser ≥ Chromium 115 / Firefox 115 (for `chrome.storage.session`, `requestSubmit`, MV3 semantics).
-- OS has standard user-isolation; no other user on the machine has access to the browser profile.
-- The user does not share their master password with the agent — even a placeholder for the master password would be self-defeating.
-
-## Not a password manager replacement
-
-EnigmAgent is specifically the **LLM-in-the-loop** layer. For your own daily logins keep using 1Password or Bitwarden — EnigmAgent handles only the case where a *different actor* (an agent) is acting on your behalf and must not see your secrets.
-
-## Reporting security issues
-
-Please **do not** open a public issue for vulnerabilities. Email the author
-([agnuxo1](https://github.com/agnuxo1)'s commit email from git log) with a PoC
-and a suggested fix window. Responsible disclosure credit will be in the
-release notes of the fixed version.
+See `platforms/mcp-server/tests/` for real crypto, storage, HTTP, CLI and broker
+regressions. See the Python native-integration and official MCP interoperability
+tests for actual framework execution against synthetic local services. The release
+workflow tests Windows/Linux runtimes, installs built distributions and starts the
+actual pinned-source Docker image. Public runtime evidence is synthetic and must
+never be replaced with real credentials or private documents.

@@ -1,0 +1,35 @@
+{
+  "version": "3.0.0",
+  "clean_install_verified": true,
+  "registry_publication": false,
+  "packages": [
+    {
+      "name": "enigmagent-mcp",
+      "version": "3.0.0",
+      "archive": "enigmagent-mcp-3.0.0.tgz",
+      "sha256": "83fc9b7d30018a09054fbd41150b79311d91c995ed8cd2f102ae645d9d370c07",
+      "source_files_verified": 12
+    },
+    {
+      "name": "enigmagent-cli",
+      "version": "3.0.0",
+      "archive": "enigmagent-cli-3.0.0.tgz",
+      "sha256": "630439f91588fbffb3a995cbd91a7e56c9a330dfa70304ae654a12cefc9d2880",
+      "source_files_verified": 7
+    },
+    {
+      "name": "@enigmagent/core",
+      "version": "3.0.0",
+      "archive": "enigmagent-core-3.0.0.tgz",
+      "sha256": "f17cf2d66511cfcd88042cd1c1f329efe5a0f09b8f52e7fb245b917fd0f316f6",
+      "source_files_verified": 4
+    },
+    {
+      "name": "@enigmagent/vault",
+      "version": "3.0.0",
+      "archive": "enigmagent-vault-3.0.0.tgz",
+      "sha256": "fc52a7f77778cdb9892294d478f47e7462cbb964c820764daac5157a50fad81d",
+      "source_files_verified": 6
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: "Please cite the exact tested release and source commit when using this software."
+type: software
+title: "EnigmAgent: authenticated local credential vault and fixed-operation broker"
+version: 3.0.0
+date-released: 2026-09-17
+license: MIT
+repository-code: "https://github.com/Agnuxo1/EnigmAgent"
+authors:
+  - family-names: "Angulo de Lafuente"
+    given-names: "Francisco"

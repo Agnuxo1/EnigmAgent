@@ -1,125 +1,20 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>EnigmAgent — Local Encrypted Vault for AI Agents</title>
-  <meta name="description" content="Local encrypted vault that resolves {{PLACEHOLDER}} secrets at runtime so LLMs never see real API keys. AES-256-GCM + Argon2id. Zero cloud.">
-  <style>
-    :root { --bg:#0f172a; --bg2:#1e293b; --accent:#a855f7; --accent2:#9333ea; --text:#f8fafc; --dim:#94a3b8; --border:#334155; }
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
-    a{color:var(--accent);text-decoration:none}
-    .hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2rem;background:radial-gradient(ellipse at 50% 0%,#312e81 0%,transparent 60%),var(--bg);position:relative}
-    .hero-content{max-width:800px;position:relative;z-index:1}
-    .badge{display:inline-block;background:rgba(168,85,247,0.15);border:1px solid var(--accent);color:var(--accent);padding:.5rem 1.2rem;border-radius:100px;font-size:.875rem;font-weight:600;margin-bottom:2rem}
-    .hero h1{font-size:clamp(2.5rem,6vw,4.5rem);font-weight:800;line-height:1.05;margin-bottom:1.5rem}
-    .hero h1 span{color:var(--accent)}
-    .hero p{color:var(--dim);font-size:clamp(1.1rem,2.5vw,1.35rem);max-width:600px;margin:0 auto 2.5rem}
-    .cta-group{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
-    .btn{display:inline-flex;align-items:center;gap:.5rem;padding:1rem 2rem;border-radius:12px;font-weight:600;transition:all .2s}
-    .btn-primary{background:var(--accent);color:white;box-shadow:0 4px 24px rgba(168,85,247,0.4)}
-    .btn-primary:hover{transform:translateY(-2px)}
-    .btn-secondary{background:transparent;border:1px solid var(--border);color:var(--text)}
-    .features{padding:6rem 2rem;background:var(--bg2);border-top:1px solid var(--border)}
-    .section-header{text-align:center;max-width:700px;margin:0 auto 4rem}
-    .section-header h2{font-size:clamp(2rem,4vw,3rem);font-weight:800;margin-bottom:1rem}
-    .section-header p{color:var(--dim);font-size:1.125rem}
-    .features-grid{max-width:1000px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:2rem}
-    .feature-card{background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:2rem;transition:all .2s}
-    .feature-card:hover{transform:translateY(-4px);border-color:var(--accent)}
-    .feature-icon{font-size:2.5rem;margin-bottom:1rem}
-    .feature-card h3{font-size:1.25rem;font-weight:700;margin-bottom:.75rem}
-    .feature-card p{color:var(--dim);font-size:.9375rem}
-    .code-block{max-width:700px;margin:3rem auto 0;background:var(--bg);border:1px solid var(--border);border-radius:16px;padding:1.5rem 2rem;font-family:monospace;text-align:left}
-    .code-block code{color:var(--accent);font-size:.9375rem}
-    .ecosystem{padding:4rem 2rem;background:var(--bg);border-top:1px solid var(--border);text-align:center}
-    .eco-grid{max-width:800px;margin:2rem auto 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem}
-    .eco-item{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:1.25rem 1rem;transition:all .2s}
-    .eco-item:hover{border-color:var(--accent);transform:translateY(-2px)}
-    .eco-emoji{font-size:2rem;margin-bottom:.5rem}
-    .eco-name{font-weight:700;font-size:.9375rem}
-    footer{padding:3rem 2rem;background:var(--bg);border-top:1px solid var(--border);text-align:center;color:var(--dim);font-size:.875rem}
-  </style>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="EnigmAgent: authenticated local credential storage and fixed-operation execution for AI agents, with ten native framework integrations.">
+<meta name="referrer" content="no-referrer"><title>EnigmAgent | Local credentials, approved operations</title>
+<style>
+:root{color-scheme:light dark;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.65;background:#0d1522;color:#edf3fa}
+*{box-sizing:border-box}body{margin:0}main,header,footer{max-width:1100px;margin:auto;padding:28px}header{display:flex;justify-content:space-between;gap:20px;align-items:center}a{color:#90d4ff;text-underline-offset:4px}nav{display:flex;gap:22px;flex-wrap:wrap}.brand{font-weight:800;letter-spacing:.03em;color:inherit;text-decoration:none}.eyebrow{text-transform:uppercase;letter-spacing:.15em;color:#90d4ff;font-size:.85rem;font-weight:700}h1{font-size:clamp(2.6rem,6.4vw,4.7rem);line-height:1.08;letter-spacing:-.045em;max-width:850px;margin:24px 0}h2{font-size:clamp(1.6rem,3vw,2.3rem);line-height:1.25;margin:0 0 18px}h3{line-height:1.25}p{max-width:780px}.lead{font-size:1.22rem;color:#b9c9dc}.hero{padding:65px 0 55px}.actions{display:flex;gap:14px;flex-wrap:wrap;margin:30px 0}.button{display:inline-block;border:1px solid #506781;border-radius:8px;padding:12px 20px;text-decoration:none;font-weight:650}.primary{background:#b4e5ff;color:#102131;border-color:#b4e5ff}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:20px;margin:28px 0}.card{background:#142134;border:1px solid #2c4059;border-radius:12px;padding:25px}.card p{color:#bccbdb}.section{padding:45px 0;border-top:1px solid #2c4059}.flow{font-family:ui-monospace,monospace;background:#142134;border:1px solid #2c4059;border-radius:10px;padding:22px;overflow-wrap:anywhere}.chips{list-style:none;display:flex;flex-wrap:wrap;gap:10px;padding:0}.chips li{border:1px solid #38506d;padding:9px 14px;border-radius:7px}.note{padding:20px 24px;border-left:4px solid #90d4ff;background:#142134;color:#c8d6e5}.muted{color:#aabdd2}footer{border-top:1px solid #2c4059;padding-top:25px;font-size:.92rem}a:focus-visible{outline:3px solid #fff;outline-offset:5px}@media(max-width:550px){main,header,footer{padding:21px}header{align-items:flex-start;flex-direction:column}.hero{padding-top:36px}.grid{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
-
-<section class="hero">
-  <div class="hero-content">
-    <div class="badge">🔐 Part of the P2PCLAW Ecosystem</div>
-    <h1>Your Agent's Secrets<br>Stay <span>Local</span></h1>
-    <p><strong>EnigmAgent</strong> is a local encrypted vault that resolves <code>{{PLACEHOLDER}}</code> secrets at runtime — so LLMs never see real API keys. AES-256-GCM + Argon2id. Zero cloud. Works with Claude, Cursor, Continue.dev, Cline, Open WebUI.</p>
-    <div class="cta-group">
-      <a href="https://github.com/Agnuxo1/EnigmAgent" class="btn btn-primary">⚡ Get Started</a>
-      <a href="#features" class="btn btn-secondary">🔐 How It Works</a>
-    </div>
-  </div>
-</section>
-
-<section class="features" id="features">
-  <div class="section-header">
-    <h2>Why EnigmAgent?</h2>
-    <p>Security should be invisible, not inconvenient.</p>
-  </div>
-  <div class="features-grid">
-    <div class="feature-card">
-      <div class="feature-icon">🔒</div>
-      <h3>Zero-Cloud Architecture</h3>
-      <p>Everything stays on your machine. The vault file never leaves your filesystem. No servers, no accounts, no data collection.</p>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">🛡️</div>
-      <h3>Military-Grade Encryption</h3>
-      <p>AES-256-GCM for data at rest. Argon2id for key derivation. Your secrets are as safe as your OS.</p>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">🎭</div>
-      <h3>LLM-Never-Sees Pattern</h3>
-      <p>Agents only see <code>{{OPENAI_KEY}}</code>, never the real key. Resolution happens at the HTTP boundary, not in context.</p>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">🔌</div>
-      <h3>Universal Integration</h3>
-      <p>MCP server for Claude Desktop. VS Code extension. CLI tool. Integrations for LangChain, LlamaIndex, CrewAI, n8n.</p>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">📱</div>
-      <h3>One-Command Setup</h3>
-      <p><code>npx enigmagent-mcp</code> and you're running. Or install the VS Code extension. Or just use the CLI.</p>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">🔓</div>
-      <h3>Open Source & Auditable</h3>
-      <p>MIT licensed. Read the code. Audit the crypto. No black boxes. Trust through transparency.</p>
-    </div>
-  </div>
-
-  <div class="code-block">
-    <p style="color:var(--dim);margin-bottom:1rem;font-size:.875rem">// Agent prompt — the LLM sees this:</p>
-    <code>curl -H "Authorization: Bearer {{OPENAI_KEY}}" https://api.openai.com/v1/chat/completions</code>
-    <p style="color:var(--dim);margin-top:1rem;margin-bottom:.5rem;font-size:.875rem">// EnigmAgent resolves at runtime — the real key never enters the LLM context:</p>
-    <code>curl -H "Authorization: Bearer sk-abc123..." https://api.openai.com/v1/chat/completions</code>
-  </div>
-</section>
-
-<section class="ecosystem">
-  <div class="section-header">
-    <h2>Part of P2PCLAW</h2>
-    <p>EnigmAgent is one agent in a decentralized network of 14 autonomous research agents.</p>
-  </div>
-  <div class="eco-grid">
-    <a href="https://p2pclaw.com" class="eco-item"><div class="eco-emoji">🦀</div><div class="eco-name">P2PCLAW</div></a>
-    <a href="https://github.com/Agnuxo1/CognitionBoard" class="eco-item"><div class="eco-emoji">🧠</div><div class="eco-name">CognitionBoard</div></a>
-    <a href="https://github.com/Agnuxo1/benchclaw" class="eco-item"><div class="eco-emoji">📊</div><div class="eco-name">BenchClaw</div></a>
-    <a href="https://github.com/Agnuxo1/paperclaw-extension" class="eco-item"><div class="eco-emoji">📄</div><div class="eco-name">PaperClaw</div></a>
-    <a href="https://agentboot.pages.dev" class="eco-item"><div class="eco-emoji">🖥️</div><div class="eco-name">AgentBoot</div></a>
-  </div>
-</section>
-
-<footer>
-  <p><strong>EnigmAgent</strong> — <a href="https://github.com/Agnuxo1/EnigmAgent">GitHub</a> · <a href="https://p2pclaw.com">P2PCLAW</a></p>
-  <p style="margin-top:.5rem;opacity:.6">Created by Francisco Angulo de Lafuente (Agnuxo1) · MIT License</p>
-</footer>
-
-</body>
-</html>
+<header><a class="brand" href="https://github.com/Agnuxo1/EnigmAgent">EnigmAgent</a><nav aria-label="Primary"><a href="https://github.com/Agnuxo1/EnigmAgent/releases">Releases</a><a href="https://github.com/Agnuxo1/EnigmAgent/blob/main/docs/INTEGRATED_RELEASE_V3.md">Documentation</a><a href="https://github.com/Agnuxo1/EnigmAgent/blob/main/SECURITY.md">Security</a></nav></header>
+<main>
+<section class="hero"><div class="eyebrow">Open-source credential infrastructure</div><h1>Local credentials.<br>Approved operations.</h1><p class="lead">An authenticated vault and a fixed-operation broker for AI agents. The operator defines the destination and action. The agent chooses a name, not a credential or an arbitrary URL.</p><div class="actions"><a class="button primary" href="https://github.com/Agnuxo1/EnigmAgent/releases">Explore versioned releases</a><a class="button" href="https://github.com/Agnuxo1/EnigmAgent">Inspect the source</a></div><p class="muted">Integrated 3.0.0 source: Node gateway, administrator, Python client and ten native framework integrations. Registry and store releases have independent status.</p></section>
+<section class="section" aria-labelledby="boundary"><h2 id="boundary">A narrower, testable execution boundary</h2><div class="flow">Agent: operation name ? Authenticated local broker ? Fixed destination + credential ? HTTP status only</div><div class="grid"><article class="card"><h3>Authenticated storage</h3><p>Argon2id and AES-256-GCM cover the complete vault entry set, including names and domain bindings. Migration is explicit and preserves the original source/data versions.</p></article><article class="card"><h3>Deliberate execution</h3><p>Approved GET/HEAD operations use validated destinations. Redirects are refused. Upstream bodies and headers are discarded; the caller receives status, not the returned payload.</p></article><article class="card"><h3>Inspectable delivery</h3><p>Executable regression tests, native-framework runs, clean package installs and a built-source container accompany versioned artifacts and checksums.</p></article></div></section>
+<section class="section" aria-labelledby="integrations"><h2 id="integrations">Ten native framework integrations</h2><ul class="chips"><li>LangChain</li><li>LangGraph</li><li>LlamaIndex</li><li>CrewAI</li><li>Haystack</li><li>Microsoft Agent Framework</li><li>smolagents</li><li>Agno</li><li>PydanticAI</li><li>AutoGen Core</li></ul><p>These are maintained third-party adapters. Tests execute native tools and workflows against a synthetic encrypted broker, including checkpoint and serialization checks where applicable. Compatibility is not an upstream endorsement or an AI-quality benchmark.</p><div class="actions"><a class="button" href="https://github.com/Agnuxo1/EnigmAgent/blob/main/platforms/python-sdk/README.md">Read the integration guide</a><a class="button" href="https://github.com/Agnuxo1/EnigmAgent/blob/main/audit/integration-runtime-evidence.json">Inspect runtime evidence</a></div></section>
+<section class="section" aria-labelledby="limits"><h2 id="limits">Explicit limits, not absolute security slogans</h2><div class="note">Raw resolution is disabled by default and cannot share a transport with broker mode. A compromised operating system or broker process is outside this boundary. Hostile code-executing agents require a separate OS/container security boundary.</div><p>The historical browser/PWA, GUI, IDE and mobile wrappers have separate validation status. They are not interchangeable with the new Node vault format, and their presence in the repository does not mean a new store release exists.</p><p><a href="https://github.com/Agnuxo1/EnigmAgent/blob/main/docs/THREAT_MODEL.md">Read the full threat model</a> ? <a href="https://github.com/Agnuxo1/EnigmAgent/blob/main/platforms/README.md">Check platform status</a></p></section>
+</main><footer><p>EnigmAgent ? Francisco Angulo de Lafuente ? MIT-licensed project source.</p><p><a href="https://github.com/Agnuxo1/EnigmAgent/blob/main/CONTRIBUTING.md">Contribute a reproducible improvement</a> ? <a href="https://github.com/Agnuxo1/EnigmAgent/blob/main/CITATION.cff">Cite the software</a></p></footer>
+</body></html>

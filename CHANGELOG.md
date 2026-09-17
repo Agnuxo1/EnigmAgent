@@ -1,5 +1,22 @@
 ## Bundled gateway 2.0.0 - 2026-09-17
 
+## 3.0.0 - Integrated authenticated vault and native frameworks (2026-09-17)
+
+- Added authenticated format-v2 vault envelopes, explicit v1 migration, permanent
+  original backups, revision-checked writes and verified recovery.
+- Added the fixed-operation broker and connected it to MCP/REST with raw resolution
+  disabled and mutually exclusive with broker mode.
+- Replaced secret-bearing CLI arguments with hidden/piped input and integrated the
+  standalone administrator and Node library against identical tested core code.
+- Added the authenticated bounded Python client and ten native execution-tested
+  framework adapters, plus official MCP-client interoperability tests.
+- Replaced the old Docker-specific unauthenticated server with the canonical gateway
+  and source-pinned non-root image; release delivery is gated on actual runtime tests.
+- Preserved the complete 2.0.0 source tree in a versioned archive and clarified the
+  separate validation status of historical browser/GUI/IDE/mobile products.
+- Added current release/migration/security documentation, package provenance and
+  a factual project landing page. No upstream adoption or registry publication is implied.
+
 Scope: `platforms/mcp-server`, not a synchronized release of every platform.
 
 - Require bearer authentication on every loopback REST endpoint.

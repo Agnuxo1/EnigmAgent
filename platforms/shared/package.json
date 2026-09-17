@@ -1,8 +1,8 @@
 {
   "name": "@enigmagent/core",
-  "version": "0.2.0",
+  "version": "3.0.0",
   "private": false,
-  "description": "Shared vault-core for EnigmAgent Node.js platforms (MCP server, CLI, npm library)",
+  "description": "EnigmAgent v3 authenticated local vault with explicit migration, atomic persistence and verified source packaging.",
   "type": "module",
   "main": "vault-core.js",
   "exports": {
@@ -11,6 +11,13 @@
   "dependencies": {
     "@noble/hashes": "1.4.0"
   },
-  "engines": { "node": ">=18" },
-  "license": "MIT"
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "MIT",
+  "files": [
+    "vault-core.js",
+    "README.md",
+    "LICENSE"
+  ]
 }

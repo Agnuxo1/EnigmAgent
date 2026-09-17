@@ -46,7 +46,7 @@ const rpc = (method, params, id = 1) => JSON.stringify({ jsonrpc: '2.0', id, met
 async function session(vault = fakeVault(), allowRawResolve = false) {
   const handle = createMcpHandler({ vault, allowRawResolve });
   const hello = await handle(rpc('initialize', { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'test', version: '1' } }));
-  assert.equal(hello.result.serverInfo.version, '2.0.0');
+  assert.equal(hello.result.serverInfo.version, '3.0.0');
   assert.equal(await handle(JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' })), null);
   return handle;
 }

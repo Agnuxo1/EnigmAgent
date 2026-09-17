@@ -1,9 +1,11 @@
 /** Trusted backend client. Do not expose resolve() as a model-facing tool. */
 import { request } from 'node:http';
-import { isObject, validateResolveArguments, validateToken } from './gateway-policy.js';
+import { isObject, validateResolveArguments, validateToken, validateOperationArguments } from './gateway-policy.js';
 
 const ERROR_CODES = new Set(['unauthorized', 'vault_locked', 'not_found', 'raw_resolve_disabled',
-  'no_domain_binding', 'domain_mismatch', 'vault_error', 'invalid_arguments', 'request_too_large']);
+  'no_domain_binding', 'domain_mismatch', 'vault_error', 'invalid_arguments', 'request_too_large',
+  'migration_required', 'operation_not_allowed', 'operation_timeout', 'operation_failed',
+  'destination_not_allowed', 'redirect_not_allowed', 'operation_response_too_large', 'broker_busy']);
 
 /** A stable error code without response bodies, secret values or request headers. */
 export class VaultClientError extends Error {
@@ -44,7 +46,7 @@ export class VaultClient {
         let chunks = [], bytes = 0;
         response.on('data', chunk => {
           bytes += chunk.length;
-          if (bytes > 1024 * 1024) {
+          if (bytes > 8 * 1024 * 1024) {
             finish(new VaultClientError('response_too_large')); response.destroy(); req.destroy();
           } else chunks.push(chunk);
         });
@@ -81,6 +83,29 @@ export class VaultClient {
     const value = await this.#call('/list');
     if (!Array.isArray(value.entries)) throw new VaultClientError('invalid_response');
     return value.entries.map(({ id, name, domain, created }) => ({ id, name, domain, created }));
+  }
+
+  /** Retrieve operator-approved operation names only. */
+  async operations() {
+    const value = await this.#call('/operations');
+    if (!Array.isArray(value.operations) || value.operations.length > 64) throw new VaultClientError('invalid_response');
+    return value.operations.map(item => {
+      if (!isObject(item)) throw new VaultClientError('invalid_response');
+      try { validateOperationArguments({ operation: item.name }); }
+      catch { throw new VaultClientError('invalid_response'); }
+      return { name: item.name };
+    });
+  }
+
+  /** Execute a fixed operation and project only its validated status fields. */
+  async execute(operation) {
+    validateOperationArguments({ operation });
+    const value = await this.#call('/execute', { operation });
+    if (value.operation !== operation || !Number.isInteger(value.status) || value.status < 100 || value.status > 599 ||
+        typeof value.ok !== 'boolean' || value.ok !== (value.status >= 200 && value.status < 300)) {
+      throw new VaultClientError('invalid_response');
+    }
+    return { operation, status: value.status, ok: value.ok };
   }
 
   /** Resolve inside a trusted backend, never inside a model-visible tool response. */

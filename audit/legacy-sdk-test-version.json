@@ -1,0 +1,5 @@
+{
+  "package": "anthropic",
+  "version": "1.6.0",
+  "purpose": "Execute the existing optional metadata adapter regression tests without API calls"
+}

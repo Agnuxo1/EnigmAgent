@@ -1,29 +1,30 @@
 {
   "name": "@enigmagent/vault",
-  "version": "1.0.0",
-  "description": "EnigmAgent vault library — AES-256-GCM + Argon2id encrypted secret store compatible with the browser extension. For Node.js, Deno and Bun.",
+  "version": "3.0.0",
+  "description": "EnigmAgent v3 authenticated local vault with explicit migration, atomic persistence and verified source packaging.",
   "type": "module",
   "main": "src/index.js",
   "types": "src/index.d.ts",
   "exports": {
     ".": {
-      "import": "./src/index.js",
-      "types": "./src/index.d.ts"
+      "types": "./src/index.d.ts",
+      "import": "./src/index.js"
     }
   },
   "files": [
     "src/",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
-    "test": "node --test test/*.js"
+    "test": "node --test"
   },
   "dependencies": {
     "@noble/hashes": "1.4.0"
   },
   "peerDependencies": {},
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
   },
   "keywords": [
     "vault",

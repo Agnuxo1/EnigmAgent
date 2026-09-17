@@ -1,0 +1,11 @@
+**
+!platforms/
+!platforms/mcp-server/
+!platforms/mcp-server/*.js
+!platforms/mcp-server/package.json
+!platforms/mcp-server/package-lock.json
+!platforms/mcp-server/README.md
+!platforms/mcp-server/LICENSE
+!Dockerfile
+!platforms/docker/
+!platforms/docker/Dockerfile
