@@ -1,25 +1,55 @@
 {
   "name": "enigmagent-mcp",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "mcpName": "io.github.agnuxo1/enigmagent",
   "private": false,
-  "files": ["index.js", "vault-core.js", "README.md"],
-  "description": "EnigmAgent MCP server — exposes your encrypted vault as an MCP tool for Open WebUI, AnythingLLM, LM Studio and any MCP-compatible AI agent.",
+  "files": [
+    "index.js",
+    "vault-core.js",
+    "gateway-policy.js",
+    "http-server.js",
+    "mcp-server.js",
+    "client.js",
+    "README.md",
+    "LICENSE",
+    "demo.mjs"
+  ],
+  "description": "Local encrypted vault gateway. Metadata-only MCP by default; authenticated loopback REST and explicit trusted-client raw resolution.",
   "type": "module",
   "bin": {
     "enigmagent-mcp": "./index.js"
   },
   "scripts": {
-    "start":       "node index.js",
-    "start:rest":  "node index.js --mode rest --port 3737",
-    "start:mcp":   "node index.js --mode mcp"
+    "start": "node index.js",
+    "start:rest": "node index.js --mode rest --port 3737",
+    "start:mcp": "node index.js --mode mcp",
+    "test": "node --test tests/gateway.test.mjs tests/cli.test.mjs",
+    "demo": "node demo.mjs",
+    "verify:package": "node tests/verify-package.mjs"
   },
   "dependencies": {
     "@noble/hashes": "1.4.0"
   },
-  "engines": { "node": ">=18" },
-  "keywords": ["mcp", "ai-agents", "vault", "secrets", "enigmagent", "open-webui", "anythingllm"],
+  "engines": {
+    "node": ">=22"
+  },
+  "keywords": [
+    "mcp",
+    "ai-agents",
+    "vault",
+    "secrets",
+    "enigmagent",
+    "open-webui",
+    "anythingllm"
+  ],
   "author": "Francisco Angulo de Lafuente <agnuxo1@gmail.com>",
   "license": "MIT",
-  "repository": { "type": "git", "url": "https://github.com/agnuxo1/EnigmAgent" }
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/agnuxo1/EnigmAgent"
+  },
+  "exports": {
+    ".": "./client.js",
+    "./client": "./client.js"
+  }
 }

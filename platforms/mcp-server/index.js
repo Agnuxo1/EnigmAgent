@@ -1,246 +1,95 @@
 #!/usr/bin/env node
-/**
- * EnigmAgent MCP Server
- *
- * Exposes the EnigmAgent vault as:
- *   1. An MCP (Model Context Protocol) stdio server — for Open WebUI, AnythingLLM, LM Studio, etc.
- *   2. A local REST API on http://localhost:PORT — for custom integrations
- *
- * The vault must be unlocked before resolution. The master key lives in
- * process memory only and is cleared when the server stops.
- *
- * Usage:
- *   # Start MCP server (stdio, for LLM tool use)
- *   enigmagent-mcp --vault ./my.vault.json
- *
- *   # Start REST API server
- *   enigmagent-mcp --mode rest --port 3737 --vault ./my.vault.json
- *
- * The vault is unlocked interactively at startup (or via env vars for CI).
- *
- * Environment variables:
- *   ENIGMAGENT_VAULT   Path to vault file (overrides --vault)
- *   ENIGMAGENT_USER    Username (skips interactive prompt)
- *   ENIGMAGENT_PASS    Password (skips interactive prompt — use only in secure envs)
- *
- * MCP tools exposed:
- *   enigmagent_resolve  — resolve a {{PLACEHOLDER}} to its real value
- *   enigmagent_list     — list secret names and domains (no values)
- */
-
-import { createServer }  from 'node:http';
-import { resolve }       from 'node:path';
-import { createInterface } from 'node:readline';
+/** EnigmAgent v2 gateway. Passwords never share stdin with MCP protocol messages. */
+import { resolve } from 'node:path';
 import { VaultManager, FileStorage } from './vault-core.js';
+import { SERVER_VERSION, validateToken } from './gateway-policy.js';
+import { createRestServer } from './http-server.js';
+import { createMcpHandler, serveStdio } from './mcp-server.js';
 
-// ── CLI argument parsing ──────────────────────────────────────────────────────
+const HELP = `EnigmAgent ${SERVER_VERSION}
+Usage: enigmagent-mcp [--mode mcp|rest] [--vault PATH] [--port PORT]
+                     [--allow-raw-resolve] [--help] [--version]
+Default: MCP stdio, metadata only. REST is a separate JSON API, not MCP over HTTP.
+Required environment: ENIGMAGENT_USER and ENIGMAGENT_PASS.
+REST also requires ENIGMAGENT_API_TOKEN (32-256 random URL-safe characters).
+ENIGMAGENT_VAULT overrides --vault. PORT defaults to 3737; 0 selects a free port.
+--allow-raw-resolve permits plaintext secret responses. Trusted clients only.
+No interactive credential prompt: stdio is reserved for protocol traffic.
+`;
 
-const args = process.argv.slice(2);
-const getArg = (flag, fallback = null) => {
-  const i = args.indexOf(flag);
-  return i !== -1 ? args[i + 1] : fallback;
-};
-
-const MODE       = getArg('--mode', 'mcp');          // 'mcp' | 'rest'
-const PORT       = parseInt(getArg('--port', '3737'), 10);
-const VAULT_PATH = process.env.ENIGMAGENT_VAULT || getArg('--vault', './enigmagent-vault.json');
-
-if (!VAULT_PATH) {
-  console.error('Usage: enigmagent-mcp --vault <path> [--mode mcp|rest] [--port 3737]');
-  process.exit(1);
-}
-
-// ── Vault unlock ─────────────────────────────────────────────────────────────
-
-const vault = new VaultManager(new FileStorage(resolve(VAULT_PATH)));
-
-async function promptCredentials() {
-  if (process.env.ENIGMAGENT_USER && process.env.ENIGMAGENT_PASS) {
-    return {
-      username: process.env.ENIGMAGENT_USER,
-      password: process.env.ENIGMAGENT_PASS,
-    };
-  }
-  const rl = createInterface({ input: process.stdin, output: process.stderr });
-  const ask = (q) => new Promise((res) => rl.question(q, res));
-
-  const username = process.env.ENIGMAGENT_USER || await ask('Username: ');
-  const password = process.env.ENIGMAGENT_PASS || await ask('Password: ');
-  rl.close();
-  return { username, password };
-}
-
-// ── MCP protocol (stdio, JSON-RPC 2.0) ───────────────────────────────────────
-
-function mcpResponse(id, result) {
-  return JSON.stringify({ jsonrpc: '2.0', id, result }) + '\n';
-}
-function mcpError(id, code, message, data) {
-  return JSON.stringify({ jsonrpc: '2.0', id, error: { code, message, data } }) + '\n';
-}
-
-const MCP_TOOLS = [
-  {
-    name:        'enigmagent_resolve',
-    description: 'Resolve a secret placeholder from the EnigmAgent vault. Returns the decrypted value. Domain binding is enforced: the origin must match the secret\'s bound domain.',
-    inputSchema: {
-      type: 'object',
-      required: ['placeholder', 'origin'],
-      properties: {
-        placeholder: {
-          type: 'string',
-          description: 'The secret name to resolve. Supports {{NAME}}, {{LOGIN:domain}}, {{DOC:filename}} syntax (pass without the braces).',
-        },
-        origin: {
-          type: 'string',
-          description: 'The requesting origin URL (e.g. https://api.example.com). Must match the secret\'s domain binding.',
-        },
-      },
-    },
-  },
-  {
-    name:        'enigmagent_list',
-    description: 'List all secret names and their bound domains. Never returns actual secret values.',
-    inputSchema: { type: 'object', properties: {} },
-  },
-];
-
-async function handleMcpRequest(line) {
-  let req;
-  try { req = JSON.parse(line); } catch { return null; }
-
-  const { id, method, params } = req;
-
-  if (method === 'initialize') {
-    return mcpResponse(id, {
-      protocolVersion: '2024-11-05',
-      capabilities: { tools: {} },
-      serverInfo: { name: 'enigmagent', version: '0.2.0' },
-    });
-  }
-  if (method === 'tools/list') {
-    return mcpResponse(id, { tools: MCP_TOOLS });
-  }
-  if (method === 'tools/call') {
-    const { name, arguments: toolArgs } = params || {};
-    try {
-      if (name === 'enigmagent_resolve') {
-        const value = await vault.resolve(toolArgs.placeholder, toolArgs.origin);
-        return mcpResponse(id, {
-          content: [{ type: 'text', text: value }],
-        });
-      }
-      if (name === 'enigmagent_list') {
-        const entries = vault.list();
-        const text = entries.map(e => `${e.name.padEnd(28)} ${e.domain ? '@' + e.domain : '(unbound)'}`).join('\n');
-        return mcpResponse(id, { content: [{ type: 'text', text: text || '(no secrets)' }] });
-      }
-      return mcpError(id, -32601, `Unknown tool: ${name}`);
-    } catch (err) {
-      return mcpResponse(id, {
-        content: [{ type: 'text', text: `Error: ${err.message}` }],
-        isError: true,
-      });
+/** Parse strict options before deriving a key or starting a listener. */
+function options(argv) {
+  const config = { mode: 'mcp', port: 3737, vault: './enigmagent-vault.json', allowRawResolve: false };
+  const seen = new Set();
+  for (let i = 0; i < argv.length; i++) {
+    const flag = argv[i];
+    if (seen.has(flag)) throw new Error('Duplicate option');
+    seen.add(flag);
+    if (flag === '--help') { config.help = true; continue; }
+    if (flag === '--version') { config.version = true; continue; }
+    if (flag === '--allow-raw-resolve') { config.allowRawResolve = true; continue; }
+    if (!['--mode', '--port', '--vault'].includes(flag) || !argv[i + 1] || argv[i + 1].startsWith('--')) {
+      throw new Error('Unknown option or missing value');
     }
+    const value = argv[++i];
+    if (flag === '--port') {
+      if (!/^\d{1,5}$/.test(value) || Number(value) > 65535) throw new Error('Invalid port');
+      config.port = Number(value);
+    } else config[flag.slice(2)] = value;
   }
-  if (method === 'ping') return mcpResponse(id, {});
-  return mcpError(id, -32601, `Method not found: ${method}`);
+  if (!['mcp', 'rest'].includes(config.mode)) throw new Error('Invalid mode');
+  return config;
 }
 
-function startMcpMode() {
-  process.stderr.write(`[EnigmAgent MCP] Vault unlocked. Listening on stdin (JSON-RPC 2.0 / MCP).\n`);
-  const rl = createInterface({ input: process.stdin });
-  rl.on('line', async (line) => {
-    if (!line.trim()) return;
-    const response = await handleMcpRequest(line);
-    if (response) process.stdout.write(response);
-  });
-  rl.on('close', () => { vault.lock(); process.exit(0); });
-}
-
-// ── REST API ──────────────────────────────────────────────────────────────────
-
-function cors(res) {
-  res.setHeader('Access-Control-Allow-Origin', '127.0.0.1');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-}
-
-function json(res, code, data) {
-  cors(res);
-  res.writeHead(code, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify(data));
-}
-
-function startRestMode() {
-  const server = createServer(async (req, res) => {
-    cors(res);
-    if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
-
-    const url = new URL(req.url, `http://localhost:${PORT}`);
-
-    // GET /status — vault health check
-    if (req.method === 'GET' && url.pathname === '/status') {
-      return json(res, 200, { status: 'ok', unlocked: vault.isUnlocked });
-    }
-
-    // GET /list — list secrets (no values)
-    if (req.method === 'GET' && url.pathname === '/list') {
-      if (!vault.isUnlocked) return json(res, 401, { error: 'vault_locked' });
-      return json(res, 200, { entries: vault.list() });
-    }
-
-    // POST /resolve — resolve a placeholder
-    if (req.method === 'POST' && url.pathname === '/resolve') {
-      if (!vault.isUnlocked) return json(res, 401, { error: 'vault_locked' });
-      let body = '';
-      req.on('data', chunk => { body += chunk; });
-      req.on('end', async () => {
-        try {
-          const { placeholder, origin } = JSON.parse(body);
-          if (!placeholder) return json(res, 400, { error: 'placeholder is required' });
-          if (!origin)      return json(res, 400, { error: 'origin is required' });
-          const value = await vault.resolve(placeholder, origin);
-          json(res, 200, { value });
-        } catch (err) {
-          const code = err.code || 'resolve_error';
-          json(res, 403, { error: code, message: err.message });
-        }
-      });
-      return;
-    }
-
-    json(res, 404, { error: 'not_found' });
-  });
-
-  server.listen(PORT, '127.0.0.1', () => {
-    console.error(`[EnigmAgent REST] Listening on http://127.0.0.1:${PORT}`);
-    console.error(`  GET  /status     — vault health check`);
-    console.error(`  GET  /list       — list secret names`);
-    console.error(`  POST /resolve    — { "placeholder": "NAME", "origin": "https://..." }`);
-  });
-
-  process.on('SIGINT', () => { vault.lock(); server.close(() => process.exit(0)); });
-  process.on('SIGTERM', () => { vault.lock(); server.close(() => process.exit(0)); });
-}
-
-// ── Main ──────────────────────────────────────────────────────────────────────
-
-(async () => {
+/** Run one transport and lock the vault on EOF, error or termination. */
+async function main() {
+  let config;
+  try { config = options(process.argv.slice(2)); }
+  catch { process.stderr.write('Invalid command line. Use --help.\n'); process.exitCode = 2; return; }
+  if (config.help) { process.stdout.write(HELP); return; }
+  if (config.version) { process.stdout.write(SERVER_VERSION + '\n'); return; }
+  const username = process.env.ENIGMAGENT_USER;
+  let password = process.env.ENIGMAGENT_PASS;
+  let token = process.env.ENIGMAGENT_API_TOKEN;
+  delete process.env.ENIGMAGENT_PASS; delete process.env.ENIGMAGENT_API_TOKEN;
+  if (!username || !password) {
+    process.stderr.write('ENIGMAGENT_USER and ENIGMAGENT_PASS are required. No credentials are read from protocol stdin.\n');
+    process.exitCode = 2; return;
+  }
+  if (config.mode === 'rest') {
+    try { validateToken(token); }
+    catch { process.stderr.write('REST requires a random ENIGMAGENT_API_TOKEN (32-256 URL-safe characters).\n'); process.exitCode = 2; return; }
+  }
+  const vault = new VaultManager(new FileStorage(resolve(process.env.ENIGMAGENT_VAULT || config.vault)));
+  let server;
+  const stop = () => {
+    vault.lock();
+    if (server) { server.closeAllConnections(); server.close(() => process.exit(0)); }
+    else process.exit(0);
+  };
+  process.once('SIGINT', stop); process.once('SIGTERM', stop);
   try {
-    process.stderr.write(`[EnigmAgent MCP] Vault: ${resolve(VAULT_PATH)}\n`);
-    const { username, password } = await promptCredentials();
-    process.stderr.write(`[EnigmAgent MCP] Unlocking vault (Argon2id — takes ~2s)…\n`);
     await vault.unlock(username, password);
-    process.stderr.write(`[EnigmAgent MCP] Vault unlocked for: ${username}\n`);
-
-    if (MODE === 'rest') {
-      startRestMode();
+    password = undefined; // Drops a reference; JavaScript cannot guarantee memory erasure.
+    if (config.allowRawResolve) process.stderr.write('WARNING: raw secret responses enabled; callers may expose them to a model.\n');
+    if (config.mode === 'rest') {
+      server = createRestServer({ vault, token, allowRawResolve: config.allowRawResolve }); token = undefined;
+      await new Promise((ready, reject) => {
+        server.once('error', reject); server.listen(config.port, '127.0.0.1', ready);
+      });
+      process.stderr.write(`[EnigmAgent] Listening on http://127.0.0.1:${server.address().port}; authentication required.\n`);
+      server.on('error', () => { vault.lock(); server.closeAllConnections(); server.close(); process.exitCode = 1; });
     } else {
-      startMcpMode();
+      process.stderr.write('[EnigmAgent] Listening on stdio.\n');
+      const ok = await serveStdio({ input: process.stdin, output: process.stdout,
+        handler: createMcpHandler({ vault, allowRawResolve: config.allowRawResolve }) });
+      vault.lock();
+      if (!ok) { process.stdin.destroy(); process.exitCode = 1; }
     }
-  } catch (err) {
-    process.stderr.write(`[EnigmAgent MCP] Fatal: ${err.message}\n`);
-    process.exit(1);
+  } catch {
+    vault.lock(); process.stderr.write('Gateway startup or transport failed. Check configuration and vault credentials.\n');
+    process.exitCode = 1;
+    if (server) { server.closeAllConnections(); server.close(); }
   }
-})();
+}
+await main();

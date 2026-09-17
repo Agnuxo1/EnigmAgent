@@ -1,0 +1,12 @@
+{
+  "component": "EnigmAgent bundled MCP/REST gateway",
+  "component_version": "1.0.0",
+  "scope": "Full tracked EnigmAgent repository snapshot before gateway v2 changes",
+  "source_commit": "21e26997219ecb2f3d27a492b4802d1b97a4f13d",
+  "archive": "source-21e2699.tar.gz",
+  "sha256": "c229d5f39a84eee3257a16ac8ffd628bfd7b3c38a46fb70cacf778340a326997",
+  "tracked_file_count": 325,
+  "verification": "Every archived tracked file compared byte-for-byte with its original Git blob. Automatic line-ending conversion disabled for archive creation.",
+  "archived_on": "2026-09-17",
+  "additional_private_files_included": false
+}

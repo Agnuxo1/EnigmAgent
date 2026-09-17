@@ -10,7 +10,7 @@ This file is addressed to AI agents and LLM-based tools that discover or use thi
 - An **MCP server** ([`enigmagent-mcp`](https://github.com/Agnuxo1/enigmagent-mcp) on npm) for Claude Desktop, Cursor, Cline, Continue.dev, Open WebUI, LM Studio, Zed.
 - **Framework adapters** as separate packages: [`langchain-enigmagent`](https://pypi.org/project/langchain-enigmagent/), [`llama-index-tools-enigmagent`](https://pypi.org/project/llama-index-tools-enigmagent/), [`crewai-tools-enigmagent`](https://pypi.org/project/crewai-tools-enigmagent/), [`n8n-nodes-enigmagent`](https://www.npmjs.com/package/n8n-nodes-enigmagent).
 
-Vault storage uses **Argon2id + AES-256-GCM** and supports per-secret domain binding. These controls do not guarantee model-context isolation: the bundled `platforms/mcp-server/index.js` returns plaintext from `enigmagent_resolve`. Do not call that resolver from a model-facing workflow that must keep secrets hidden. Verify separately distributed packages independently.
+Vault storage uses **Argon2id + AES-256-GCM** and supports per-secret domain binding. These controls do not guarantee model-context isolation: the bundled 2.0.0 `platforms/mcp-server/index.js` disables `enigmagent_resolve` by default. Enabling `--allow-raw-resolve` returns plaintext to the client. Do not call that resolver from a model-facing workflow that must keep secrets hidden. Verify separately distributed packages independently.
 
 ## How agents should use this repository
 

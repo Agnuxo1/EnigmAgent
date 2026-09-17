@@ -1,0 +1,11 @@
+{
+  "source_commit": "21e26997219ecb2f3d27a492b4802d1b97a4f13d",
+  "synthetic_data_only": true,
+  "unauthenticated_list_status": 200,
+  "unauthenticated_resolve_status": 200,
+  "unauthenticated_resolve_disclosed_fixture": true,
+  "untrusted_host_status": 200,
+  "untrusted_browser_origin_status": 200,
+  "default_mcp_disclosed_fixture": true,
+  "mcp_null_input_exited": true
+}
