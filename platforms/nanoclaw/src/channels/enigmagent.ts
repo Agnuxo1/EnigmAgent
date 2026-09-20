@@ -39,8 +39,27 @@ function vaultBase(ctx: ChannelContext): string {
   return `http://${host}:${port}`;
 }
 
-async function vaultGet<T>(url: string): Promise<T> {
-  const res = await fetch(url);
+function vaultToken(ctx: ChannelContext): string {
+  const token = ctx.config?.enigmagent?.token;
+  if (typeof token !== 'string' || !/^[A-Za-z0-9_-]{32,256}$/.test(token)) {
+    throw new Error('missing_or_invalid_token');
+  }
+  return token;
+}
+
+function rawResolveAllowed(ctx: ChannelContext): boolean {
+  return ctx.config?.enigmagent?.allowRawResolve === true;
+}
+
+function authHeaders(ctx: ChannelContext, json = false): Record<string, string> {
+  return {
+    Authorization: `Bearer ${vaultToken(ctx)}`,
+    ...(json ? { 'Content-Type': 'application/json' } : {}),
+  };
+}
+
+async function vaultGet<T>(url: string, ctx: ChannelContext): Promise<T> {
+  const res = await fetch(url, { headers: authHeaders(ctx) });
   if (!res.ok) {
     const body = await res.json().catch(() => ({})) as { error?: string; message?: string };
     throw new Error(`EnigmAgent vault error (${body.error ?? res.status}): ${body.message ?? res.statusText}`);
@@ -48,10 +67,10 @@ async function vaultGet<T>(url: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-async function vaultPost<T>(url: string, body: unknown): Promise<T> {
+async function vaultPost<T>(url: string, body: unknown, ctx: ChannelContext): Promise<T> {
   const res = await fetch(url, {
     method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: authHeaders(ctx, true),
     body:    JSON.stringify(body),
   });
   if (!res.ok) {
@@ -68,7 +87,7 @@ async function vaultPost<T>(url: string, body: unknown): Promise<T> {
 async function handleStatus(ctx: ChannelContext): Promise<ChannelResponse> {
   const base = vaultBase(ctx);
   try {
-    const data = await vaultGet<VaultStatusResponse>(`${base}/status`);
+    const data = await vaultGet<VaultStatusResponse>(`${base}/status`, ctx);
     return {
       type: 'success',
       data: {
@@ -91,7 +110,7 @@ async function handleStatus(ctx: ChannelContext): Promise<ChannelResponse> {
 async function handleList(ctx: ChannelContext): Promise<ChannelResponse> {
   const base = vaultBase(ctx);
   try {
-    const data = await vaultGet<VaultListResponse>(`${base}/list`);
+    const data = await vaultGet<VaultListResponse>(`${base}/list`, ctx);
     const entries = data.entries.map((e) => ({ name: e.name, domain: e.domain ?? null }));
     return {
       type: 'success',
@@ -107,6 +126,9 @@ async function handleResolve(
   ctx: ChannelContext,
   msg: ChannelMessage,
 ): Promise<ChannelResponse> {
+  if (!rawResolveAllowed(ctx)) {
+    return { type: 'error', data: { error: 'raw_resolve_disabled_by_adapter', message: 'Enable this only for a trusted backend and start the gateway with --allow-raw-resolve.' } };
+  }
   const base        = vaultBase(ctx);
   const placeholder = (msg.payload?.placeholder as string | undefined) ?? '';
   const origin      = (msg.payload?.origin as string | undefined) ?? 'http://localhost';
@@ -116,7 +138,7 @@ async function handleResolve(
   }
 
   try {
-    const data = await vaultPost<VaultResolveResponse>(`${base}/resolve`, { placeholder, origin });
+    const data = await vaultPost<VaultResolveResponse>(`${base}/resolve`, { placeholder, origin }, ctx);
     return { type: 'success', data: { placeholder, value: data.value } };
   } catch (err: unknown) {
     const msg2 = err instanceof Error ? err.message : String(err);
@@ -128,6 +150,9 @@ async function handleResolveText(
   ctx: ChannelContext,
   msg: ChannelMessage,
 ): Promise<ChannelResponse> {
+  if (!rawResolveAllowed(ctx)) {
+    return { type: 'error', data: { error: 'raw_resolve_disabled_by_adapter', message: 'Enable this only for a trusted backend and start the gateway with --allow-raw-resolve.' } };
+  }
   const base      = vaultBase(ctx);
   const inputText = (msg.payload?.text as string | undefined) ?? '';
   const origin    = (msg.payload?.origin as string | undefined) ?? 'http://localhost';
@@ -144,7 +169,7 @@ async function handleResolveText(
   // Resolve all in parallel
   const results = await Promise.allSettled(
     names.map((name) =>
-      vaultPost<VaultResolveResponse>(`${base}/resolve`, { placeholder: name, origin }).then(
+      vaultPost<VaultResolveResponse>(`${base}/resolve`, { placeholder: name, origin }, ctx).then(
         (r) => ({ name, value: r.value }),
       ),
     ),
@@ -177,7 +202,7 @@ async function handleResolveText(
 export const enigmagentChannel: Channel = {
   name:        'enigmagent',
   version:     '1.0.0',
-  description: 'EnigmAgent local vault — check status, list secrets, resolve {{PLACEHOLDER}} references.',
+  description: 'EnigmAgent local vault — authenticated status/list plus explicit trusted-backend raw resolution.',
 
   /**
    * Incoming message format:
@@ -227,7 +252,7 @@ export const enigmagentChannel: Channel = {
     },
     {
       name:        'enigmagent_resolve',
-      description: 'Resolve a single {{PLACEHOLDER}} name to its real value.',
+      description: 'Trusted-backend only: resolve one {{PLACEHOLDER}}; plaintext may enter agent context.',
       inputSchema: {
         type:       'object',
         properties: {
@@ -243,7 +268,7 @@ export const enigmagentChannel: Channel = {
     },
     {
       name:        'enigmagent_resolve_text',
-      description: 'Replace all {{PLACEHOLDER}} references in a text block with their real values.',
+      description: 'Trusted-backend only: replace {{PLACEHOLDER}} references; plaintext may enter agent context.',
       inputSchema: {
         type:       'object',
         properties: {
