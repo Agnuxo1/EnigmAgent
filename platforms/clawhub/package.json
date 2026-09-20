@@ -42,7 +42,9 @@
     "config": {
       "enigmagent.host": "127.0.0.1",
       "enigmagent.port": 3737,
-      "enigmagent.origin": "http://localhost"
+      "enigmagent.origin": "http://localhost",
+      "enigmagent.token": "",
+      "enigmagent.allowRawResolve": false
     }
   },
   "devDependencies": {
