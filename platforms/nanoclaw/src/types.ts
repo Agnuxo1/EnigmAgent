@@ -14,6 +14,8 @@ export interface ChannelContext {
     enigmagent?: {
       host?: string;
       port?: number;
+      token?: string;
+      allowRawResolve?: boolean;
     };
     [key: string]: unknown;
   };
