@@ -94,16 +94,16 @@ Agent: Check vault status
 → { running: true, unlocked: true }
 Agent: List available secrets
 → GITHUB_TOKEN, OPENAI_API_KEY, STRIPE_KEY
-Agent: Run: git clone https://{{GITHUB_TOKEN}}@github.com/org/repo
-→ Vault resolves {{GITHUB_TOKEN}} → real token at execution time
 ```
 
-### Resolve text with multiple placeholders
+For an untrusted model, use EnigmAgent's fixed-operation broker. The model selects
+an operator-defined operation name and receives only its status; it does not receive
+a credential or response body. Do not put a placeholder into a URL, prompt, log or
+memory store.
 
-```
-Input:  "curl -H 'Authorization: Bearer {{OPENAI_API_KEY}}' https://api.openai.com/v1/models"
-Output: "curl -H 'Authorization: Bearer sk-proj-abc...' https://api.openai.com/v1/models"
-```
+The resolve tools are reserved for a trusted backend with both raw-resolution
+opt-ins enabled. In that mode the returned value is plaintext and can enter the
+caller context; this is an explicit exception to the model-isolating broker design.
 
 ---
 
