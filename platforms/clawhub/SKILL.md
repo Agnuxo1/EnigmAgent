@@ -11,9 +11,9 @@
 
 ## Overview
 
-`enigmagent-vault` is a ClawHub skill that gives your agents secure, local-vault access to API keys, tokens, passwords, and private documents — without ever hardcoding credentials.
+`enigmagent-vault` is a ClawHub skill that gives your agents authenticated, local-vault access to API keys, tokens, passwords, and private documents without hardcoding credentials.
 
-Agents reference secrets as `{{PLACEHOLDER}}` symbols. The vault resolves them at execution time using AES-256-GCM encryption, never exposing values in prompts, logs, or memory.
+Agents can reference secrets as `{{PLACEHOLDER}}` symbols. Raw resolution is an explicit trusted-backend mode: the returned value is plaintext and can enter the calling agent's context, logs, or memory.
 
 ---
 
@@ -21,8 +21,8 @@ Agents reference secrets as `{{PLACEHOLDER}}` symbols. The vault resolves them a
 
 - **Check vault status** — verify the EnigmAgent server is running and unlocked before starting any credentialed task
 - **List secrets** — discover what secrets are available (names and domains, never values)
-- **Resolve placeholders** — replace `{{SECRET_NAME}}` with the real value at call time
-- **Guard agent memory** — integrate with Mem0 / vector stores to keep placeholders symbolic in stored memories
+- **Resolve placeholders** — available only when the adapter and gateway raw-resolution opt-ins are enabled
+- **Guard agent memory** — do not use raw resolution with an untrusted model; use EnigmAgent's fixed-operation broker for agent mode
 
 ---
 
@@ -32,8 +32,8 @@ Agents reference secrets as `{{PLACEHOLDER}}` symbols. The vault resolves them a
 |------|-------------|
 | `enigmagent_vault_status` | Check if vault is running and unlocked |
 | `enigmagent_vault_list` | List all secret names and domains |
-| `enigmagent_resolve` | Resolve a single `{{PLACEHOLDER}}` |
-| `enigmagent_resolve_text` | Replace all `{{PLACEHOLDER}}` in a text block |
+| `enigmagent_resolve` | Trusted-backend-only plaintext resolution |
+| `enigmagent_resolve_text` | Trusted-backend-only plaintext substitution |
 
 ---
 
@@ -63,6 +63,8 @@ skills:
 | `enigmagent.host` | `127.0.0.1` | Vault server host |
 | `enigmagent.port` | `3737` | Vault server port |
 | `enigmagent.origin` | `http://localhost` | Origin for domain binding |
+| `enigmagent.token` | required | Random REST bearer token |
+| `enigmagent.allowRawResolve` | `false` | Adapter-side opt-in; the gateway must also use `--allow-raw-resolve` |
 
 ```yaml
 # .clawhub/config.yaml
@@ -76,10 +78,10 @@ enigmagent:
 
 ## Security model
 
-- The vault server runs **locally only** — `127.0.0.1`, never exposed to the network
+- The REST gateway requires a bearer token and should remain bound to `127.0.0.1`
 - Credentials are encrypted with **AES-256-GCM** + **Argon2id** KDF
 - Domain binding ensures a secret can only be accessed from its registered origin
-- Placeholder references are symbolic in all agent prompts and memory stores
+- Raw resolution is not model-isolating; for untrusted agents use the fixed-operation broker instead of these resolve tools
 
 ---
 
@@ -107,5 +109,6 @@ Output: "curl -H 'Authorization: Bearer sk-proj-abc...' https://api.openai.com/v
 
 ## Requirements
 
-- EnigmAgent vault server running: `enigmagent-mcp --mode rest --port 3737`
+- EnigmAgent vault server running: `enigmagent-mcp --mode rest --port 3737` (add `--allow-raw-resolve` only for a trusted backend)
+- A random REST bearer token configured as `enigmagent.token`
 - Node.js >= 18 or Python >= 3.9
