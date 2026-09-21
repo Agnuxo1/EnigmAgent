@@ -12,8 +12,27 @@ function vaultBase(config: Record<string, unknown>): string {
   return `http://${host}:${port}`;
 }
 
-async function vaultGet(url: string): Promise<unknown> {
-  const res = await fetch(url);
+function vaultToken(config: Record<string, unknown>): string {
+  const token = config['enigmagent.token'];
+  if (typeof token !== 'string' || !/^[A-Za-z0-9_-]{32,256}$/.test(token)) {
+    throw new Error('missing_or_invalid_token');
+  }
+  return token;
+}
+
+function authHeaders(config: Record<string, unknown>, json = false): Record<string, string> {
+  return {
+    Authorization: `Bearer ${vaultToken(config)}`,
+    ...(json ? { 'Content-Type': 'application/json' } : {}),
+  };
+}
+
+function rawResolveAllowed(config: Record<string, unknown>): boolean {
+  return config['enigmagent.allowRawResolve'] === true;
+}
+
+async function vaultGet(url: string, config: Record<string, unknown>): Promise<unknown> {
+  const res = await fetch(url, { headers: authHeaders(config) });
   if (!res.ok) {
     const body = await res.json().catch(() => ({})) as Record<string, string>;
     throw new Error(`Vault error (${body.error ?? res.status}): ${body.message ?? res.statusText}`);
@@ -21,11 +40,11 @@ async function vaultGet(url: string): Promise<unknown> {
   return res.json();
 }
 
-async function vaultPost(url: string, body: unknown): Promise<unknown> {
+async function vaultPost(url: string, body: unknown, config: Record<string, unknown>): Promise<unknown> {
   const res = await fetch(url, {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify(body),
+    method: 'POST',
+    headers: authHeaders(config, true),
+    body: JSON.stringify(body),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({})) as Record<string, string>;
@@ -44,7 +63,7 @@ export async function enigmagent_vault_status(
 ): Promise<unknown> {
   const base = vaultBase(config);
   try {
-    const data = await vaultGet(`${base}/status`) as { unlocked: boolean };
+    const data = await vaultGet(base + '/status', config) as { unlocked: boolean };
     return {
       running:  true,
       unlocked: data.unlocked,
@@ -63,7 +82,7 @@ export async function enigmagent_vault_list(
 ): Promise<unknown> {
   const base = vaultBase(config);
   try {
-    const data = await vaultGet(`${base}/list`) as {
+    const data = await vaultGet(base + '/list', config) as {
       entries: Array<{ name: string; domain?: string }>;
     };
     const entries = data.entries.map((e) => ({ name: e.name, domain: e.domain ?? null }));
@@ -77,13 +96,16 @@ export async function enigmagent_resolve(
   params: { placeholder: string; origin?: string },
   config: Record<string, unknown>,
 ): Promise<unknown> {
+  if (!rawResolveAllowed(config)) {
+    return { error: 'raw_resolve_disabled_by_adapter', message: 'Enable this only for a trusted backend and start the gateway with --allow-raw-resolve.' };
+  }
   const base   = vaultBase(config);
   const origin = params.origin ?? (config['enigmagent.origin'] as string | undefined) ?? 'http://localhost';
   try {
-    const data = await vaultPost(`${base}/resolve`, {
+    const data = await vaultPost(base + '/resolve', {
       placeholder: params.placeholder,
       origin,
-    }) as { value: string };
+    }, config) as { value: string };
     return { placeholder: params.placeholder, value: data.value };
   } catch (err: unknown) {
     return { error: String(err) };
@@ -94,6 +116,9 @@ export async function enigmagent_resolve_text(
   params: { text: string; origin?: string },
   config: Record<string, unknown>,
 ): Promise<unknown> {
+  if (!rawResolveAllowed(config)) {
+    return { error: 'raw_resolve_disabled_by_adapter', message: 'Enable this only for a trusted backend and start the gateway with --allow-raw-resolve.' };
+  }
   const base      = vaultBase(config);
   const origin    = params.origin ?? (config['enigmagent.origin'] as string | undefined) ?? 'http://localhost';
   const inputText = params.text;
@@ -105,7 +130,7 @@ export async function enigmagent_resolve_text(
 
   const results = await Promise.allSettled(
     names.map((name) =>
-      vaultPost(`${base}/resolve`, { placeholder: name, origin }).then(
+      vaultPost(base + '/resolve', { placeholder: name, origin }, config).then(
         (r) => ({ name, value: (r as { value: string }).value }),
       ),
     ),
